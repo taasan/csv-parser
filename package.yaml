@@ -1,0 +1,65 @@
+name:                csv-parser
+version:             0.1.0.0
+github:              "taasan/csv-parser"
+license:             GPL-3
+author:              "Trond Aasan"
+maintainer:          "trond.aasan@gmail.com"
+copyright:           "2019 Trond Aasan"
+
+extra-source-files:
+- README.md
+
+# Metadata used when publishing your package
+# synopsis:            Short description of your package
+# category:            Parsing
+
+description:         A simple CSV parser
+
+dependencies:
+- base >= 4.7 && < 5
+- megaparsec
+- text
+library:
+  source-dirs: src
+
+executables:
+  csv-parser-exe:
+    main:                Main.hs
+    source-dirs:         app
+    ghc-options:
+    - -O2
+    - -Wall
+    - -Werror
+    dependencies:
+    - csv-parser
+
+tests:
+  csv-parser-test:
+    main:                Spec.hs
+    source-dirs:         test
+    ghc-options:
+    - -O2
+    - -Wall
+    dependencies:
+    - csv-parser
+    - hspec
+    - hspec-megaparsec
+  hlint:
+    main: hlint-test-exe.hs
+    source-dirs:         hlint
+    ghc-options:
+    - -threaded
+    - -with-rtsopts=-N
+    dependencies:
+    - hlint-test
+
+benchmarks:
+  csv-parser-benchmarks:
+    main:                Main.hs
+    source-dirs:         bench
+    ghc-options:
+    - -O2
+    - -Wall
+    dependencies:
+    - csv-parser
+    - criterion
