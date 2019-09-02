@@ -1,23 +1,27 @@
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE Unsafe            #-}
 
 module Main
   ( main
   ) where
 
-import           CSV.Encoder
 import           CSV.Parser
+    ( parseCsv
+    )
 import qualified Data.Text.IO as T
 import           Prelude
-    ( Either (..)
+    ( Either (Left, Right)
     , IO
+    , print
     , putStr
-    , ($)
     )
 import           Text.Megaparsec
+    ( errorBundlePretty
+    )
 
 main :: IO ()
 main = do
   input <- T.getContents
-  case parse csvFile "" input of
+  case parseCsv ',' input of
     Left bundle -> putStr (errorBundlePretty bundle)
-    Right res   -> T.putStrLn $ encode res
+    Right res   -> print res

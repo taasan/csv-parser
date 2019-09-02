@@ -1,10 +1,4 @@
-build:
-	stack $@
-
-test:
-	stack $@
-
-bench:
+build bench clean test:
 	stack $@
 
 all: test bench
@@ -29,4 +23,16 @@ format:
 		-exec stack exec -- hindent --sort-imports {} \; \
 		-exec stack exec -- stylish-haskell -i {} \;
 
-.PHONY: all build test bench setup pre-commit pre-push install-hooks format
+.PHONY: all \
+	build \
+	clean \
+	test \
+	bench \
+	setup \
+	pre-\
+	commit \
+	pre-\
+	push \
+	install-\
+	hooks \
+	format

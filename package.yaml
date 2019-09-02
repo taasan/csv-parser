@@ -21,6 +21,10 @@ dependencies:
 - text
 library:
   source-dirs: src
+  ghc-options:
+    - -O2
+    - -Wall
+    - -Werror
 
 executables:
   csv-parser-exe:
@@ -40,6 +44,7 @@ tests:
     ghc-options:
     - -O2
     - -Wall
+    - -Worphans
     dependencies:
     - csv-parser
     - hspec
