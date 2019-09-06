@@ -27,9 +27,6 @@ import           Control.Monad
     ( fmap
     , liftM2
     )
-import           Data.Bifunctor
-    ( second
-    )
 import           Data.Char
     ( Char
     )
@@ -128,19 +125,28 @@ showList' sep (x:xs) s = shows x (showl xs)
 
 -- API
 parseField :: Char -> Text -> Either ParseError Field
-parseField sep t = Field <$> P.parse (fieldS sep) "" t
+parseField sep t = Field <$> parsed
+  where
+    parsed :: Either ParseError Text
+    parsed = P.parse (fieldS sep) "" t
 
 parseRow :: Char -> Text -> Either ParseError Record
-parseRow sep t = second map $ P.parse (rowS sep) "" t
+parseRow sep t = mapFields <$> parsed
   where
-    map :: [Text] -> Record
-    map = Record . (Field <$>)
+    parsed :: Either ParseError [Text]
+    parsed = P.parse (rowS sep) "" t
 
 parseCsv :: Char -> Text -> Either ParseError [Record]
-parseCsv sep t = second map $ P.parse (csvFileS sep) "" t
+parseCsv sep t = mapRecords <$> parsed
   where
-    map :: [[Text]] -> [Record]
-    map = fmap (Record . fmap Field)
+    parsed :: Either ParseError [[Text]]
+    parsed = P.parse (csvFileS sep) "" t
+
+mapFields :: [Text] -> Record
+mapFields = Record . (Field <$>)
+
+mapRecords :: [[Text]] -> [Record]
+mapRecords = (mapFields <$>)
 
 {-# INLINE quote #-}
 quote :: Parser Char
