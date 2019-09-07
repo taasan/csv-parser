@@ -21,11 +21,11 @@ make format
 
 CHANGES=$(git status --porcelain --ignored=no)
 
-if [[ ! -z ${CHANGES} ]]
+if [[ -n ${CHANGES} ]]
 then
     git --no-pager diff
     echo "Source code not properly formatted. Run 'make format'"
     exit 1
 fi
 
-make $(basename "${0}")
+make "$(basename "${0}")"

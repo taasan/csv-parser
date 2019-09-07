@@ -5,41 +5,32 @@ module Main
   ( main
   ) where
 
-import           Data.Either
-    ( Either
-    )
-import           Data.Text
-    ( Text
-    , intercalate
-    , unlines
-    )
-import           Data.Void
-    ( Void
-    )
-
 import           Criterion.Main
 import           CSV.Encoder
 import           CSV.Parser
 import qualified CSV.Parser as CSV
+import qualified Data.Text as T
 import           Prelude
-    ( IO
+    ( Either
+    , IO
+    , Text
     , flip
     , replicate
+    , unlines
     , ($)
     , (.)
     )
 import qualified Text.Megaparsec as P
 
-type ParseError = P.ParseErrorBundle Text Void
-
 parse :: Parser a -> Text -> Either ParseError a
 parse = flip P.parse ""
 
 unquoted :: Text
-unquoted = intercalate "," $ replicate 100 "aaaaa"
+unquoted = T.intercalate "," $ replicate 100 "aaaaa"
 
+-- unquoted = " -- " -- intercalate "," $ replicate 100 "aaaaa"
 quoted :: Text
-quoted = intercalate "," . replicate 100 $ encodeField "aa\"a\""
+quoted = T.intercalate "," . replicate 100 $ encodeField "aa\"a\""
 
 main :: IO ()
 main =

@@ -14,7 +14,6 @@ module CSV.Parser
   , parseCsv
   , parseField
   , parseRow
-  , toText
   , encodeField
   , encodeRecord
   , encode
@@ -33,7 +32,6 @@ import           Data.Char
     )
 import           Data.String
     ( IsString (fromString)
-    , String
     )
 import           Data.Text
     ( Text
@@ -42,22 +40,22 @@ import qualified Data.Text as T
 import           Data.Void
     ( Void
     )
-import           GHC.Show
-    ( Show (show, showList)
-    , ShowS
-    , shows
-    )
 import           Prelude
     ( Either
     , Eq
     , Maybe (..)
     , Ord
+    , ToText
+    , one
+    , toText
+    , unlines
     , ($)
     , (&&)
     , (.)
     , (/=)
     , (<>)
     )
+import qualified Prelude
 import           Text.Megaparsec
     ( (<|>)
     )
@@ -80,6 +78,11 @@ import qualified Text.Megaparsec.Char as P
     , string
     )
 import qualified Text.Megaparsec.Error as P
+import           Text.Show
+    ( Show (show, showList)
+    , ShowS
+    , shows
+    )
 
 -- TYPES
 type Parser = P.Parsec Void Text
@@ -93,10 +96,6 @@ newtype Field =
 newtype Record =
   Record [Field]
 
--- ToText
-class ToText a where
-  toText :: a -> T.Text
-
 -- Instances
 -- TODO Add Read instances
 instance ToText Field where
@@ -109,14 +108,14 @@ toFields :: Record -> [Field]
 toFields (Record fields) = fields
 
 instance IsString Field where
-  fromString = Field . (fromString :: String -> Text)
+  fromString = Field . Prelude.fromString
 
 instance Show Field where
-  show = T.unpack . encodeField
+  show = Prelude.toString . encodeField
   showList = showList' $ Just ','
 
 instance Show Record where
-  show = T.unpack . encodeRecord
+  show = Prelude.toString . encodeRecord
   showList = showList' Nothing
 
 showList' :: (Show a) => Maybe Char -> [a] -> ShowS
@@ -160,7 +159,7 @@ quote = P.char '"'
 
 {-# INLINE escape #-}
 escape :: Parser Text
-escape = T.pack <$> P.many (q <|> c)
+escape = Prelude.toText <$> P.many (q <|> c)
   where
     q = P.label "escaped double quote" $ '"' <$ P.string "\"\""
     c = P.label "unescaped character" $ P.anySingleBut '"'
@@ -208,7 +207,7 @@ csvFileS = (`P.sepEndBy1` P.eol) . rowS
 {- Encoding -}
 {-# INLINABLE encode #-}
 encode :: [Record] -> Text
-encode rs = T.unlines (encodeRecord <$> rs)
+encode rs = unlines (encodeRecord <$> rs)
 
 {-# INLINE encodeRecord #-}
 encodeRecord :: Record -> Text
@@ -221,5 +220,6 @@ encodeField :: Field -> Text
 encodeField "" = ""
 encodeField s = T.concat ["\"", T.concatMap esc (toText s), "\""]
   where
+    esc :: Char -> Text
     esc '"' = "\"\""
-    esc c   = T.singleton c
+    esc c   = one c

@@ -5,14 +5,14 @@ module CSV.ParserSpec
   ( spec
   ) where
 
+import           CSV.Parser
+import qualified CSV.Parser as CSV
 import           Data.Either
     ( Either (..)
     )
-import qualified Data.List as L
 import           Data.Text
     ( Text
     )
-
 import qualified Data.Text as T
 import           Prelude
     ( flip
@@ -25,10 +25,6 @@ import           Prelude
     , (<$>)
     , (<>)
     )
-
-import           CSV.Parser
-import qualified CSV.Parser as CSV
-
 import           Test.Hspec
 import           Test.Hspec.Megaparsec
 import qualified Text.Megaparsec as P
@@ -41,15 +37,15 @@ spec =
   describe "Parser functions" $ do
     context "csvFile" $ do
       it "parses two lines of unquoted records" $
-        parse csvFile (T.unlines ["aaa,bbb,ccc", "ddd,eee,fff"]) `shouldParse`
+        parse csvFile (unlines ["aaa,bbb,ccc", "ddd,eee,fff"]) `shouldParse`
         [["aaa", "bbb", "ccc"], ["ddd", "eee", "fff"]]
       it "parses two lines of quoted records" $
         parse
           csvFile
-          (T.unlines ["\"aaa\",\"bbb\",\"ccc\"", "\"ddd\",\"eee\",\"fff\""]) `shouldParse`
+          (unlines ["\"aaa\",\"bbb\",\"ccc\"", "\"ddd\",\"eee\",\"fff\""]) `shouldParse`
         [["aaa", "bbb", "ccc"], ["ddd", "eee", "fff"]]
       it "parses two lines of mixed quoted an unquoted records" $
-        parse csvFile (T.unlines ["aa\"a,bbb,ccc", "ddd,ee\"e,fff"]) `shouldParse`
+        parse csvFile (unlines ["aa\"a,bbb,ccc", "ddd,ee\"e,fff"]) `shouldParse`
         [["aa\"a", "bbb", "ccc"], ["ddd", "ee\"e", "fff"]]
     context "field" $ do
       it "parses an empty unquoted field" $ parse CSV.field "" `shouldParse` ""
@@ -78,12 +74,14 @@ spec =
         ["aa\"a", "bbb", "ccc"]
     describe "instance Show" $ do
       context "Show field" $ do
-        it "is empty" $ show empty `shouldBe` ""
-        it "encloses value in quotes" $ show (Field "AB") `shouldBe` "\"AB\""
-        it "escapes quotes" $ show (Field "A\"B") `shouldBe` "\"A\"\"B\""
+        it "is empty" $ show empty `shouldBe` ("" :: Text)
+        it "encloses value in quotes" $
+          show (Field "AB") `shouldBe` ("\"AB\"" :: Text)
+        it "escapes quotes" $
+          show (Field "A\"B") `shouldBe` ("\"A\"\"B\"" :: Text)
       context "Show record" $ do
         it "empty fields" $
-          show (Record (replicate 5 empty)) `shouldBe` ",,,,\n"
+          show (Record (replicate 5 empty)) `shouldBe` (",,,,\n" :: Text)
         it "unquoted fields" $ show (uqRow 1) `shouldBe` uqRowResult 1
         it "quoted fields" $ show (qRow 1) `shouldBe` qRowResult 1
       context "Show records" $ do
@@ -105,7 +103,7 @@ spec =
     emptyRow n = Record (replicate n empty)
     uqRow n = Record $ Field <$> replicate n "A"
     uqRowResult n =
-      unlines . replicate n $ L.intercalate "," (replicate n "\"A\"")
+      unlines . replicate n $ T.intercalate "," (replicate n "\"A\"")
     qRow n = Record $ Field <$> fmap quote (replicate n "A")
     qRowResult n = unlines (replicate n "\"\"\"A\"\"\"")
     parseField' = parseField ','

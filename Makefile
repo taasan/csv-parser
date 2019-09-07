@@ -14,9 +14,9 @@ $(HOOKS) : git-hooks/common.sh
 
 install-hooks: $(HOOKS)
 
-pre-commit: test
+pre-commit: test bench
 
-pre-push: test
+pre-push: test bench
 
 format:
 	find . -path ./.stack-work -prune -o -name \*.hs \
