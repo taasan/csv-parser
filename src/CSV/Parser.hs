@@ -3,8 +3,9 @@
 
 module CSV.Parser
   ( Parser
-  , Field
-  , Record
+  , Field(..)
+  , Record(..)
+  , ParseError
   , csvFile
   , csvFileS
   , row

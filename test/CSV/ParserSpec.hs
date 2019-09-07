@@ -11,9 +11,6 @@ import           Data.Either
 import           Data.Text
     ( Text
     )
-import           Data.Void
-    ( Void
-    )
 
 import qualified Data.Text as T
 import           Prelude
@@ -27,8 +24,6 @@ import qualified CSV.Parser as CSV
 import           Test.Hspec
 import           Test.Hspec.Megaparsec
 import qualified Text.Megaparsec as P
-
-type ParseError = P.ParseErrorBundle Text Void
 
 parse :: Parser a -> Text -> Either ParseError a
 parse = flip P.parse ""
