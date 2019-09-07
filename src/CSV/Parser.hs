@@ -33,6 +33,7 @@ import           Data.Char
     )
 import           Data.String
     ( IsString (fromString)
+    , String
     )
 import           Data.Text
     ( Text
@@ -42,18 +43,20 @@ import           Data.Void
     ( Void
     )
 import           GHC.Show
-    ( Show (show, showList, showsPrec)
+    ( Show (show, showList)
     , ShowS
+    , shows
     )
 import           Prelude
     ( Either
     , Eq
-    , Maybe (Nothing)
+    , Maybe (..)
     , Ord
     , ($)
     , (&&)
     , (.)
     , (/=)
+    , (<>)
     )
 import           Text.Megaparsec
     ( (<|>)
@@ -106,23 +109,25 @@ toFields :: Record -> [Field]
 toFields (Record fields) = fields
 
 instance IsString Field where
-  fromString = Field . T.pack
+  fromString = Field . (fromString :: String -> Text)
 
 instance Show Field where
   show = T.unpack . encodeField
-  showList = showList' ','
+  showList = showList' $ Just ','
 
 instance Show Record where
   show = T.unpack . encodeRecord
-  showList = showList' '\n'
+  showList = showList' Nothing
 
-showList' :: (Show a) => Char -> [a] -> ShowS
+showList' :: (Show a) => Maybe Char -> [a] -> ShowS
 showList' _ [] s = s
-showList' sep (x:xs) s = shows x (showl xs)
+showList' sep (x:xs) s = shows x (showl sep xs)
   where
-    shows = showsPrec 0
-    showl []     = s
-    showl (y:ys) = sep : shows y (showl ys)
+    showl _ [] = s
+    showl sep' (y:ys) =
+      case sep' of
+        Just a  -> a : showl Nothing ys
+        Nothing -> shows y (showl Nothing ys)
 
 -- API
 parseField :: Char -> Text -> Either ParseError Field
@@ -207,7 +212,9 @@ encode rs = T.unlines (encodeRecord <$> rs)
 
 {-# INLINE encodeRecord #-}
 encodeRecord :: Record -> Text
-encodeRecord = T.intercalate "," . fmap encodeField . toFields
+encodeRecord r = f r <> "\n"
+  where
+    f = T.intercalate "," . fmap encodeField . toFields
 
 {-# INLINE encodeField #-}
 encodeField :: Field -> Text
