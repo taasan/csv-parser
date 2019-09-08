@@ -8,12 +8,9 @@ module CSV.Parser
   , Field(..)
   , Record(..)
   , ParseError
-  , csvFile
-  , csvFileS
   , row
   , rowS
   , field
-  , parseCsv
   , parseField
   , parseRecord
   , textParser
@@ -132,17 +129,8 @@ parseRecord sep t = mapFields <$> parsed
     parsed :: Either ParseError [Text]
     parsed = P.parse (rowS sep) "" t
 
-parseCsv :: Char -> Text -> Either ParseError [Record]
-parseCsv sep t = mapRecords <$> parsed
-  where
-    parsed :: Either ParseError [[Text]]
-    parsed = P.parse (csvFileS sep) "" t
-
 mapFields :: [Text] -> Record
 mapFields = Record . (Field <$>)
-
-mapRecords :: [[Text]] -> [Record]
-mapRecords = (mapFields <$>)
 
 {-# INLINE quote #-}
 quote :: Parser Char
@@ -191,16 +179,8 @@ rowS :: Char -> Parser [Text]
 rowS c = do
   P.notFollowedBy P.eof -- to prevent reading empty line at the end of file
   res <- liftM2 P.sepBy1 fieldS P.char c
-  void (P.lookAhead P.eol) <|> void (P.lookAhead P.eof)
+  void P.eol <|> void P.eof
   return res
-
-{-# INLINABLE csvFile #-}
-csvFile :: Parser [[Text]]
-csvFile = csvFileS ','
-
-{-# INLINABLE csvFileS #-}
-csvFileS :: Char -> Parser [[Text]]
-csvFileS = (`P.sepEndBy1` P.eol) . rowS
 
 {- Encoding -}
 {-# INLINE encodeRecord #-}

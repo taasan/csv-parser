@@ -7,45 +7,48 @@ module Main
 
 import           Criterion.Main
 import           CSV.Parser
+    ( EncodeCsv (..)
+    , Field (..)
+    , ParseError
+    , Parser
+    )
 import qualified CSV.Parser as CSV
 import qualified Data.Text as T
 import           Prelude
     ( Either
     , IO
+    , Int
     , Text
     , flip
     , replicate
-    , unlines
     , ($)
     , (.)
     )
 import qualified Text.Megaparsec as P
+import           Text.Printf
 
 parse :: Parser a -> Text -> Either ParseError a
 parse = flip P.parse ""
 
-unquoted :: Text
-unquoted = T.intercalate "," $ replicate 100 "aaaaa"
+unquoted :: Int -> Text
+unquoted n = T.intercalate "," $ replicate n "aaaaaaa"
 
--- unquoted = " -- " -- intercalate "," $ replicate 100 "aaaaa"
-quoted :: Text
-quoted = T.intercalate "," . replicate 100 $ encodeCsv $ Field "aa\"a\""
+quoted :: Int -> Text
+quoted n = T.intercalate "," . replicate n $ encodeCsv $ Field "\"abc"
 
 main :: IO ()
-main =
+main = do
+  let c = ','
+      parseRecord = CSV.rowS c
+      n = 100
+      uq = unquoted n
+      q = quoted n
+  printf "Length of unquoted string: %d\n" (T.length uq)
+  printf "Length of quoted   string: %d\n" (T.length q)
   defaultMain
     [ bgroup
         "row"
-        [ bench "unquoted" $ whnf (parse CSV.row) uq
-        , bench "quoted" $ whnf (parse CSV.row) q
-        ]
-    , bgroup
-        "csvFiles"
-        [ bench "unquoted" . whnf (parse CSV.csvFile) $ file uq
-        , bench "quoted" . whnf (parse CSV.csvFile) $ file q
+        [ bench "unquoted" $ whnf (parse parseRecord) uq
+        , bench "quoted" $ whnf (parse parseRecord) q
         ]
     ]
-  where
-    file = unlines . replicate 10000
-    uq = unquoted
-    q = quoted

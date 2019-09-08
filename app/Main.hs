@@ -5,22 +5,57 @@ module Main
   ( main
   ) where
 
-import           CSV.Parser
-import qualified Data.Text.IO as T
+import           CSV
+import           Data.Text
+    ( Text
+    )
+import           Data.Text.IO
 import           Prelude
     ( Either (Left, Right)
     , IO
-    , putStr
-    , putText
+    , lines
+    , mapM_
+    , stderr
+    , stdout
     , ($)
+    , (.)
+    , (<$>)
+    )
+import           System.IO
+    ( Handle
     )
 import           Text.Megaparsec
     ( errorBundlePretty
     )
 
+parse :: Text -> Either Text Text
+parse = f . parseRecord ',' -- . toText
+  where
+    f (Left err)     = Left $ (toText . errorBundlePretty) err
+    f (Right record) = Right $ encodeCsv record
+
+handle :: Either Text Text -> (Handle, Text)
+handle x =
+  case x of
+    Left err  -> (stderr, err)
+    Right res -> (stdout, res)
+
+print' :: (Handle, Text) -> IO ()
+print' (h, x) = hPutStr h x
+
 main :: IO ()
 main = do
-  input <- T.getContents
-  case parseCsv ',' input of
-    Left bundle -> putStr (errorBundlePretty bundle)
-    Right res   -> putText $ encodeCsv res
+  input <- getContents
+  let l = lines input
+  let records = handle . parse <$> l
+  mapM_ print' records
+  -- void $ fmap print' input
+  -- void $ hFlush stdout
+  -- void $ hFlush stderr
+  -- return ()
+  -- where
+  --   print' :: Text -> IO ()
+  --   print' line = do
+  --     case parseRecord ',' line of
+  --       Left bundle -> putStr (errorBundlePretty bundle)
+  --       Right res   -> putText $ encodeCsv res

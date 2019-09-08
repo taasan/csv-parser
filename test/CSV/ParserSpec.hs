@@ -34,23 +34,12 @@ parse = flip P.parse ""
 spec :: Spec
 spec =
   describe "Parser functions" $ do
-    context "csvFile" $ do
-      it "parses two lines of unquoted records" $
-        parse csvFile (unlines ["aaa,bbb,ccc", "ddd,eee,fff"]) `shouldParse`
-        [["aaa", "bbb", "ccc"], ["ddd", "eee", "fff"]]
-      it "parses two lines of quoted records" $
-        parse
-          csvFile
-          (unlines ["\"aaa\",\"bbb\",\"ccc\"", "\"ddd\",\"eee\",\"fff\""]) `shouldParse`
-        [["aaa", "bbb", "ccc"], ["ddd", "eee", "fff"]]
-      it "parses two lines of mixed quoted an unquoted records" $
-        parse csvFile (unlines ["\"aaa\",bbb,ccc", "ddd,\"eee\",fff"]) `shouldParse`
-        [["aaa", "bbb", "ccc"], ["ddd", "eee", "fff"]]
     context "field" $ do
       let p = parse row
       it "parses an empty unquoted field" $ parse field "" `shouldParse` ""
       it "parses an empty quoted field" $
         parse CSV.field "\"\"" `shouldParse` ""
+      it "parses a single quote" $ parse field "\"\"\"\"" `shouldParse` "\""
       it "fails on unterminated quote" $ p `shouldFailOn` "\""
       it "fails on unterminated quote" $ p `shouldFailOn` "\"a\"a\","
       it "fails on unterminated quote" $ p `shouldFailOn` "\" \" \","
@@ -64,6 +53,8 @@ spec =
         parse field "aaa,bbb,ccc" `shouldParse` "aaa"
     context "row" $ do
       it "fails on empty line" $ parse CSV.row `shouldFailOn` ""
+      it "parses a field with a single quote" $
+        parse row "\"\"\"\"" `shouldParse` ["\""]
       it "parses a line with several empty fields" $
         parse CSV.row ",,," `shouldParse` ["", "", "", ""]
       it "parses a line with several unquoted fields" $
