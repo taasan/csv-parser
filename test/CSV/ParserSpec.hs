@@ -52,8 +52,8 @@ spec =
       it "parses an empty quoted field" $
         parse CSV.field "\"\"" `shouldParse` ""
       it "fails on unterminated quote" $ p `shouldFailOn` "\""
-      --it "fails on unterminated quote" $ p `shouldFailOn` "\"a\"a\""
-      --it "fails on unterminated quote" $ p `shouldFailOn` "\" \" \""
+      it "fails on unterminated quote" $ p `shouldFailOn` "\"a\"a\","
+      it "fails on unterminated quote" $ p `shouldFailOn` "\" \" \","
       it "parses an unquoted field" $ p "aaa" `shouldParse` ["aaa"]
       it "parses a quoted field" $ p "\"a\"\"aa\"" `shouldParse` ["a\"aa"]
       it "parses a quoted field with LF" $

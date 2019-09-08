@@ -194,7 +194,9 @@ row = rowS ','
 rowS :: Char -> Parser [Text]
 rowS c = do
   P.notFollowedBy P.eof -- to prevent reading empty line at the end of file
-  liftM2 P.sepBy1 fieldS P.char c
+  res <- liftM2 P.sepBy1 fieldS P.char c
+  void (P.lookAhead P.eol) <|> void (P.lookAhead P.eof)
+  return res
 
 {-# INLINABLE csvFile #-}
 csvFile :: Parser [[Text]]
