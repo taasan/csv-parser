@@ -115,16 +115,13 @@ encodeList sep (x:xs) = shows x (showl sep xs)
 
 -- API
 parseField :: Char -> Text -> Either ParseError Field
-parseField sep t = Field <$> parsed
-  where
-    parsed :: Either ParseError Text
-    parsed = P.parse (fieldS sep) "" t
+parseField sep t = Field <$> parsed fieldS sep t
 
 parseRecord :: Char -> Text -> Either ParseError Record
-parseRecord sep t = mapFields <$> parsed
-  where
-    parsed :: Either ParseError [Text]
-    parsed = P.parse (rowS sep) "" t
+parseRecord sep t = mapFields <$> parsed rowS sep t
+
+parsed :: (Char -> Parser a) -> Char -> Text -> Either ParseError a
+parsed f sep = P.parse (f sep) ""
 
 mapFields :: [Text] -> Record
 mapFields = wrap . (Field <$>)
