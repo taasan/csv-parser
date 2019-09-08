@@ -58,6 +58,7 @@ import           Prelude
     , (<>)
     )
 import qualified Prelude
+import           Relude.Extra.Newtype
 import           Text.Megaparsec
     ( (<|>)
     )
@@ -126,7 +127,7 @@ parseRecord sep t = mapFields <$> parsed
     parsed = P.parse (rowS sep) "" t
 
 mapFields :: [Text] -> Record
-mapFields = Record . (Field <$>)
+mapFields = wrap . (Field <$>)
 
 {-# INLINE quote #-}
 quote :: Parser Char
@@ -183,8 +184,8 @@ rowS c = do
 encodeRecord :: Record -> Text
 encodeRecord r = f r <> "\n"
   where
-    f = T.intercalate "," . fmap encodeField . toFields
-    toFields (Record fields) = fields
+    f :: Record -> Text
+    f = T.intercalate "," . fmap encodeField . un
 
 {-# INLINE encodeField #-}
 encodeField :: Field -> Text
