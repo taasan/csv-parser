@@ -180,12 +180,7 @@ textParser c = do
 
 {-# INLINE stringParser #-}
 stringParser :: Parser Text
--- stringParser = P.between quote quote escape
-stringParser = do
-  void quote
-  s <- escape
-  void quote
-  return s
+stringParser = P.between quote quote escape
 
 {-# INLINE row #-}
 row :: Parser [Text]
