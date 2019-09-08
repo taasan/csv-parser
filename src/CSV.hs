@@ -1,8 +1,6 @@
 -- {-# LANGUAGE NoImplicitPrelude #-}
 module CSV
-  ( encodeField
-  , encodeRecord
-  , encode
+  ( EncodeCsv
   , Parser
   , Field
   , csvFile
@@ -12,7 +10,7 @@ module CSV
   , field
   , parseCsv
   , parseField
-  , parseRow
+  , parseRecord
   , toText
   ) where
 

@@ -6,7 +6,6 @@ module Main
   ) where
 
 import           Criterion.Main
-import           CSV.Encoder
 import           CSV.Parser
 import qualified CSV.Parser as CSV
 import qualified Data.Text as T
@@ -30,7 +29,7 @@ unquoted = T.intercalate "," $ replicate 100 "aaaaa"
 
 -- unquoted = " -- " -- intercalate "," $ replicate 100 "aaaaa"
 quoted :: Text
-quoted = T.intercalate "," . replicate 100 $ encodeField "aa\"a\""
+quoted = T.intercalate "," . replicate 100 $ encodeCsv $ Field "aa\"a\""
 
 main :: IO ()
 main =

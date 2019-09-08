@@ -1,8 +1,10 @@
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE NoImplicitPrelude #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module CSV.Parser
   ( Parser
+  , EncodeCsv(..)
   , Field(..)
   , Record(..)
   , ParseError
@@ -13,10 +15,11 @@ module CSV.Parser
   , field
   , parseCsv
   , parseField
-  , parseRow
-  , encodeField
-  , encodeRecord
-  , encode
+  , parseRecord
+  , textParser
+  , emptyStringParser
+  , stringParser
+  , escape
   ) where
 
 import           Control.Applicative
@@ -26,6 +29,7 @@ import           Control.Applicative
 import           Control.Monad
     ( fmap
     , liftM2
+    , return
     )
 import           Data.Char
     ( Char
@@ -41,14 +45,14 @@ import           Data.Void
     ( Void
     )
 import           Prelude
-    ( Either
+    ( Either (..)
     , Eq
     , Maybe (..)
     , Ord
+    , Show
     , ToText
     , one
-    , toText
-    , unlines
+    , void
     , ($)
     , (&&)
     , (.)
@@ -60,28 +64,10 @@ import           Text.Megaparsec
     ( (<|>)
     )
 import qualified Text.Megaparsec as P
-    ( Parsec
-    , anySingleBut
-    , between
-    , eof
-    , label
-    , many
-    , notFollowedBy
-    , parse
-    , sepBy1
-    , sepEndBy1
-    , takeWhileP
-    )
 import qualified Text.Megaparsec.Char as P
     ( char
     , eol
     , string
-    )
-import qualified Text.Megaparsec.Error as P
-import           Text.Show
-    ( Show (show, showList)
-    , ShowS
-    , shows
     )
 
 -- TYPES
@@ -91,41 +77,46 @@ type ParseError = P.ParseErrorBundle Text Void
 
 newtype Field =
   Field Text
-  deriving (Eq, Ord)
+  deriving (Eq, Ord, Show)
 
 newtype Record =
   Record [Field]
+  deriving (Show)
 
--- Instances
--- TODO Add Read instances
-instance ToText Field where
-  toText (Field a) = a
-
-instance ToText Record where
-  toText = encodeRecord
-
-toFields :: Record -> [Field]
-toFields (Record fields) = fields
+class EncodeCsv a where
+  encodeCsv :: a -> Text
 
 instance IsString Field where
   fromString = Field . Prelude.fromString
 
-instance Show Field where
-  show = Prelude.toString . encodeField
-  showList = showList' $ Just ','
+instance EncodeCsv Field where
+  encodeCsv = encodeField
 
-instance Show Record where
-  show = Prelude.toString . encodeRecord
-  showList = showList' Nothing
+instance EncodeCsv [Field] where
+  encodeCsv fs = encodeList (Just ',') $ fmap Right fs
 
-showList' :: (Show a) => Maybe Char -> [a] -> ShowS
-showList' _ [] s = s
-showList' sep (x:xs) s = shows x (showl sep xs)
+instance EncodeCsv Record where
+  encodeCsv = encodeRecord
+
+instance EncodeCsv [Record] where
+  encodeCsv r = encodeList Nothing $ fmap Right r
+
+-- Helpers
+encodeList :: (EncodeCsv b) => Maybe Char -> [Either Text b] -> Text
+encodeList _ [] = ""
+encodeList sep (x:xs) = shows x (showl sep xs)
   where
-    showl _ [] = s
+    shows :: (ToText a, EncodeCsv b) => Either a b -> (Text -> Text)
+    shows x' s' = f x' <> s'
+    f :: (ToText a, EncodeCsv b) => Either a b -> Text
+    f x' =
+      case x' of
+        Left y  -> Prelude.toText y
+        Right z -> encodeCsv z
+    showl _ [] = ""
     showl sep' (y:ys) =
       case sep' of
-        Just a  -> a : showl Nothing ys
+        Just a  -> a `T.cons` showl Nothing ys
         Nothing -> shows y (showl Nothing ys)
 
 -- API
@@ -135,8 +126,8 @@ parseField sep t = Field <$> parsed
     parsed :: Either ParseError Text
     parsed = P.parse (fieldS sep) "" t
 
-parseRow :: Char -> Text -> Either ParseError Record
-parseRow sep t = mapFields <$> parsed
+parseRecord :: Char -> Text -> Either ParseError Record
+parseRecord sep t = mapFields <$> parsed
   where
     parsed :: Either ParseError [Text]
     parsed = P.parse (rowS sep) "" t
@@ -159,14 +150,20 @@ quote = P.char '"'
 
 {-# INLINE escape #-}
 escape :: Parser Text
-escape = Prelude.toText <$> P.many (q <|> c)
+escape = Prelude.toText <$> P.some (q <|> c)
   where
     q = P.label "escaped double quote" $ '"' <$ P.string "\"\""
     c = P.label "unescaped character" $ P.anySingleBut '"'
 
 {-# INLINE fieldS #-}
 fieldS :: Char -> Parser Text
-fieldS = (stringParser <|>) . textParser
+fieldS = (<|> stringParser) . (<|> P.try emptyStringParser) . textParser
+
+emptyStringParser :: Parser Text
+emptyStringParser = do
+  void quote
+  void quote
+  return ""
 
 {-# INLINE field #-}
 field :: Parser Text
@@ -174,17 +171,20 @@ field = fieldS ','
 
 {-# INLINE textParser #-}
 textParser :: Char -> Parser Text
-textParser c = P.takeWhileP Nothing p
+textParser c = do
+  P.notFollowedBy quote
+  P.takeWhileP Nothing p
   where
-    p x = x /= c && x /= '\r' && x /= '\n'
+    p x = x /= c && x /= '\r' && x /= '\n' && x /= '"'
 
 {-# INLINE stringParser #-}
 stringParser :: Parser Text
-stringParser = stringParserEscapeF escape
-
-{-# INLINE stringParserEscapeF #-}
-stringParserEscapeF :: Parser Text -> Parser Text
-stringParserEscapeF = P.between quote quote
+-- stringParser = P.between quote quote escape
+stringParser = do
+  void quote
+  s <- escape
+  void quote
+  return s
 
 {-# INLINE row #-}
 row :: Parser [Text]
@@ -205,20 +205,17 @@ csvFileS :: Char -> Parser [[Text]]
 csvFileS = (`P.sepEndBy1` P.eol) . rowS
 
 {- Encoding -}
-{-# INLINABLE encode #-}
-encode :: [Record] -> Text
-encode rs = unlines (encodeRecord <$> rs)
-
 {-# INLINE encodeRecord #-}
 encodeRecord :: Record -> Text
 encodeRecord r = f r <> "\n"
   where
     f = T.intercalate "," . fmap encodeField . toFields
+    toFields (Record fields) = fields
 
 {-# INLINE encodeField #-}
 encodeField :: Field -> Text
-encodeField "" = ""
-encodeField s = T.concat ["\"", T.concatMap esc (toText s), "\""]
+encodeField (Field "") = ""
+encodeField (Field s) = T.concat ["\"", T.concatMap esc s, "\""]
   where
     esc :: Char -> Text
     esc '"' = "\"\""

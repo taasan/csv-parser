@@ -1,9 +1,7 @@
 {-# LANGUAGE NoImplicitPrelude #-}
 
 module CSV.Encoder
-  ( encodeField
-  , encodeRecord
-  , encode
+  ( EncodeCsv
   ) where
 
 import           CSV.Parser
