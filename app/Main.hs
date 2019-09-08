@@ -13,11 +13,11 @@ import           Data.Text.IO
 import           Prelude
     ( Either (Left, Right)
     , IO
+    , bimap
     , lines
     , mapM_
     , stderr
     , stdout
-    , ($)
     , (.)
     , (<$>)
     )
@@ -29,10 +29,7 @@ import           Text.Megaparsec
     )
 
 parse :: Text -> Either Text Text
-parse = f . parseRecord ',' -- . toText
-  where
-    f (Left err)     = Left $ (toText . errorBundlePretty) err
-    f (Right record) = Right $ encodeCsv record
+parse = bimap (toText . errorBundlePretty) encodeCsv . parseRecord ','
 
 handle :: Either Text Text -> (Handle, Text)
 handle x =
