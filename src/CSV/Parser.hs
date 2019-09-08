@@ -48,6 +48,7 @@ import           Prelude
     , Ord
     , Show
     , ToText
+    , bifoldMap
     , one
     , void
     , ($)
@@ -104,12 +105,7 @@ encodeList _ [] = ""
 encodeList sep (x:xs) = shows x (showl sep xs)
   where
     shows :: (ToText a, EncodeCsv b) => Either a b -> (Text -> Text)
-    shows x' s' = f x' <> s'
-    f :: (ToText a, EncodeCsv b) => Either a b -> Text
-    f x' =
-      case x' of
-        Left y  -> Prelude.toText y
-        Right z -> encodeCsv z
+    shows x' s' = bifoldMap Prelude.toText encodeCsv x' <> s'
     showl _ [] = ""
     showl sep' (y:ys) =
       case sep' of
