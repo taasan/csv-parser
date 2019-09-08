@@ -163,6 +163,7 @@ emptyStringParser :: Parser Text
 emptyStringParser = do
   void quote
   void quote
+  P.notFollowedBy quote
   return ""
 
 {-# INLINE field #-}
