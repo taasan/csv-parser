@@ -84,6 +84,7 @@ newtype Record =
 class EncodeCsv a where
   encodeCsv :: a -> Text
 
+-- INSTANCES
 instance IsString Field where
   fromString = Field . Prelude.fromString
 
