@@ -17,6 +17,7 @@ import qualified Data.Text as T
 import           Prelude
     ( flip
     , fmap
+    , fromList
     , replicate
     , unlines
     , ($)
@@ -76,7 +77,8 @@ spec =
           encodeCsv (Field "A\"B") `shouldBe` ("\"A\"\"B\"" :: Text)
       context "Show record" $ do
         it "empty fields" $
-          encodeCsv (Record (replicate 5 empty)) `shouldBe` (",,,,\n" :: Text)
+          encodeCsv (Record (fromList $ replicate 5 empty)) `shouldBe`
+          (",,,,\n" :: Text)
         it "unquoted fields" $ encodeCsv (uqRow 1) `shouldBe` uqRowResult 1
         it "quoted fields" $ encodeCsv (qRow 1) `shouldBe` qRowResult 1
       context "Show records" $ do
@@ -99,11 +101,11 @@ spec =
       it "fails on unterminated quote" $ p `shouldFailOn` "\" \" \""
   where
     empty = Field ""
-    emptyRow n = Record (replicate n empty)
-    uqRow n = Record $ Field <$> replicate n "A"
+    emptyRow n = Record (fromList $ replicate n empty)
+    uqRow n = Record $ fromList $ Field <$> replicate n "A"
     uqRowResult n =
       unlines . replicate n $ T.intercalate "," (replicate n "\"A\"")
-    qRow n = Record $ Field <$> fmap quote (replicate n "A")
+    qRow n = Record $ fromList $ Field <$> fmap quote (replicate n "A")
     qRowResult n = unlines (replicate n "\"\"\"A\"\"\"")
     parseField' :: Text -> Either ParseError Field
     parseField' = parseField ','

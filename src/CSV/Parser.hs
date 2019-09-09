@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE NoImplicitPrelude #-}
+{-# LANGUAGE OverloadedLists   #-}
 {-# LANGUAGE OverloadedStrings #-}
 
 module CSV.Parser
@@ -38,6 +39,12 @@ import           Data.Text
     ( Text
     )
 import qualified Data.Text as T
+import           Data.Vector
+    ( Vector
+    , fromList
+    , map
+    , toList
+    )
 import           Data.Void
     ( Void
     )
@@ -57,7 +64,6 @@ import           Prelude
     , (<>)
     )
 import qualified Prelude
-import           Relude.Extra.Newtype
 import           Text.Megaparsec
     ( (<|>)
     )
@@ -77,8 +83,8 @@ newtype Field =
   Field Text
   deriving (Eq, Ord, Show)
 
-newtype Record =
-  Record [Field]
+newtype Record n =
+  Record (Vector Field)
   deriving (Eq, Ord, Show)
 
 class EncodeCsv a where
@@ -94,10 +100,10 @@ instance EncodeCsv Field where
 instance EncodeCsv [Field] where
   encodeCsv fs = encodeList (Just ',') $ fmap Right fs
 
-instance EncodeCsv Record where
+instance EncodeCsv (Record n) where
   encodeCsv = encodeRecord
 
-instance EncodeCsv [Record] where
+instance EncodeCsv [Record n] where
   encodeCsv r = encodeList Nothing $ fmap Right r
 
 -- Helpers
@@ -120,14 +126,14 @@ encodeList sep (x:xs) = shows x (showl xs)
 parseField :: Char -> Text -> Either ParseError Field
 parseField sep t = Field <$> parsed fieldS sep t
 
-parseRecord :: Char -> Text -> Either ParseError Record
+parseRecord :: Char -> Text -> Either ParseError (Record n)
 parseRecord sep t = mapFields <$> parsed rowS sep t
 
 parsed :: (Char -> Parser a) -> Char -> Text -> Either ParseError a
 parsed f sep = P.parse (f sep) ""
 
-mapFields :: [Text] -> Record
-mapFields = wrap . (Field <$>)
+mapFields :: [Text] -> Record n
+mapFields = Record . fromList . (Field <$>)
 
 {-# INLINE quote #-}
 quote :: Parser Char
@@ -181,11 +187,11 @@ rowS c = do
 
 {- Encoding -}
 {-# INLINE encodeRecord #-}
-encodeRecord :: Record -> Text
+encodeRecord :: Record n -> Text
 encodeRecord r = f r <> "\n"
   where
-    f :: Record -> Text
-    f (Record fs) = encodeList (Just ',') $ fmap Right fs
+    f :: Record n -> Text
+    f (Record v) = encodeList (Just ',') $ toList $ map Right v
 
 {-# INLINE encodeField #-}
 encodeField :: Field -> Text
