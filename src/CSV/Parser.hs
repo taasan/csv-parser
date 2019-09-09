@@ -79,7 +79,7 @@ newtype Field =
 
 newtype Record =
   Record [Field]
-  deriving (Show)
+  deriving (Eq, Ord, Show)
 
 class EncodeCsv a where
   encodeCsv :: a -> Text
