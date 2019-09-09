@@ -51,6 +51,7 @@ import qualified Data.Vector.Sized as V
 import           Data.Void
     ( Void
     )
+import           Relude.Extra.Newtype
 
 import           Prelude
     ( Either (..)
@@ -67,6 +68,7 @@ import           Prelude
     , (&&)
     , (.)
     , (/=)
+    , (<<$>>)
     , (<>)
     , (==)
     )
@@ -122,10 +124,10 @@ instance EncodeCsv [[Field]] where
   encodeCsv = encodeRecords
 
 instance EncodeCsv (Record n) where
-  encodeCsv (Record fields) = encodeRecord $ V.toList fields
+  encodeCsv = encodeRecord . V.toList . un
 
 instance EncodeCsv [Record n] where
-  encodeCsv r = encodeList Nothing $ fmap Right r
+  encodeCsv = encodeList Nothing . (Right <$>)
 
 -- Helpers
 encodeList :: (EncodeCsv a) => Maybe Char -> [Either Text a] -> Text
@@ -145,10 +147,10 @@ encodeList sep (x:xs) = shows x (showl xs)
 
 -- API
 parseField :: Char -> Text -> Either ParseError Field
-parseField sep t = Field <$> parsed fieldS sep t
+parseField = ((<$>) Field .) . parsed fieldS
 
 parseRecord :: Char -> Text -> Either ParseError [Field]
-parseRecord sep t = (Field <$>) <$> parsed rowS sep t
+parseRecord = ((<<$>>) Field .) . parsed rowS
 
 fromFields :: (KnownNat n) => [Field] -> Maybe (Record n)
 fromFields fs =
