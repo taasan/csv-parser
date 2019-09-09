@@ -2,7 +2,8 @@
 module CSV
   ( EncodeCsv(..)
   , Parser
-  , Field
+  , Field(..)
+  , Record(..)
   , row
   , rowS
   , field

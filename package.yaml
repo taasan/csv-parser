@@ -21,6 +21,7 @@ dependencies:
 - megaparsec
 - text
 - vector
+- vector-sized
 
 library:
   source-dirs: src

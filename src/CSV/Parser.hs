@@ -1,7 +1,10 @@
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE OverloadedLists   #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DataKinds           #-}
+{-# LANGUAGE FlexibleInstances   #-}
+{-# LANGUAGE NoImplicitPrelude   #-}
+{-# LANGUAGE OverloadedLists     #-}
+{-# LANGUAGE OverloadedStrings   #-}
+{-# LANGUAGE PatternSynonyms     #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module CSV.Parser
   ( Parser
@@ -14,10 +17,12 @@ module CSV.Parser
   , field
   , parseField
   , parseRecord
+  , fromFields
   , textParser
   , emptyStringParser
   , stringParser
   , escape
+  , mkRecord
   ) where
 
 import           Control.Applicative
@@ -39,18 +44,19 @@ import           Data.Text
     ( Text
     )
 import qualified Data.Text as T
-import           Data.Vector
+import           Data.Vector.Sized
     ( Vector
-    , fromList
-    , map
-    , toList
     )
+import qualified Data.Vector.Sized as V
 import           Data.Void
     ( Void
     )
+
 import           Prelude
     ( Either (..)
     , Eq
+    , Int
+    , KnownNat
     , Maybe (..)
     , Ord
     , Show
@@ -62,6 +68,7 @@ import           Prelude
     , (.)
     , (/=)
     , (<>)
+    , (==)
     )
 import qualified Prelude
 import           Text.Megaparsec
@@ -84,8 +91,19 @@ newtype Field =
   deriving (Eq, Ord, Show)
 
 newtype Record n =
-  Record (Vector Field)
+  Record (Vector n Field)
   deriving (Eq, Ord, Show)
+
+mkRecord :: (KnownNat n) => Int -> [Field] -> Maybe (Record n)
+mkRecord len fs =
+  if len == Prelude.length fs
+    then record
+    else Nothing
+  where
+    record =
+      case V.fromList fs of
+        Nothing -> Nothing
+        Just a  -> Just (Record a)
 
 class EncodeCsv a where
   encodeCsv :: a -> Text
@@ -98,10 +116,13 @@ instance EncodeCsv Field where
   encodeCsv = encodeField
 
 instance EncodeCsv [Field] where
-  encodeCsv fs = encodeList (Just ',') $ fmap Right fs
+  encodeCsv = encodeRecord
+
+instance EncodeCsv [[Field]] where
+  encodeCsv = encodeRecords
 
 instance EncodeCsv (Record n) where
-  encodeCsv = encodeRecord
+  encodeCsv (Record fields) = encodeRecord $ V.toList fields
 
 instance EncodeCsv [Record n] where
   encodeCsv r = encodeList Nothing $ fmap Right r
@@ -126,14 +147,17 @@ encodeList sep (x:xs) = shows x (showl xs)
 parseField :: Char -> Text -> Either ParseError Field
 parseField sep t = Field <$> parsed fieldS sep t
 
-parseRecord :: Char -> Text -> Either ParseError (Record n)
-parseRecord sep t = mapFields <$> parsed rowS sep t
+parseRecord :: Char -> Text -> Either ParseError [Field]
+parseRecord sep t = (Field <$>) <$> parsed rowS sep t
+
+fromFields :: (KnownNat n) => [Field] -> Maybe (Record n)
+fromFields fs =
+  case V.fromList fs of
+    Nothing -> Nothing
+    Just v  -> Just (Record v)
 
 parsed :: (Char -> Parser a) -> Char -> Text -> Either ParseError a
 parsed f sep = P.parse (f sep) ""
-
-mapFields :: [Text] -> Record n
-mapFields = Record . fromList . (Field <$>)
 
 {-# INLINE quote #-}
 quote :: Parser Char
@@ -186,13 +210,14 @@ rowS c = do
   return res
 
 {- Encoding -}
-{-# INLINE encodeRecord #-}
-encodeRecord :: Record n -> Text
-encodeRecord r = f r <> "\n"
-  where
-    f :: Record n -> Text
-    f (Record v) = encodeList (Just ',') $ toList $ map Right v
+{-# INLINE encodeRecords #-}
+encodeRecords :: [[Field]] -> Text
+encodeRecords r = encodeList Nothing $ fmap Right r
 
+encodeRecord :: [Field] -> Text
+encodeRecord fs = encodeList (Just ',') (fmap Right fs) <> "\n"
+
+-- encodeCsv $ V.toList v
 {-# INLINE encodeField #-}
 encodeField :: Field -> Text
 encodeField (Field "") = ""
