@@ -47,7 +47,6 @@ import           Prelude
     , Maybe (..)
     , Ord
     , Show
-    , ToText
     , bifoldMap
     , one
     , void
@@ -101,17 +100,20 @@ instance EncodeCsv [Record] where
   encodeCsv r = encodeList Nothing $ fmap Right r
 
 -- Helpers
-encodeList :: (EncodeCsv b) => Maybe Char -> [Either Text b] -> Text
+encodeList :: (EncodeCsv a) => Maybe Char -> [Either Text a] -> Text
 encodeList _ [] = ""
-encodeList sep (x:xs) = shows x (showl sep xs)
+encodeList sep (x:xs) = shows x (showl xs)
   where
-    shows :: (ToText a, EncodeCsv b) => Either a b -> (Text -> Text)
+    shows :: (EncodeCsv a) => Either Text a -> (Text -> Text)
     shows x' s' = bifoldMap Prelude.toText encodeCsv x' <> s'
-    showl _ [] = ""
-    showl sep' (y:ys) =
-      case sep' of
-        Just a  -> a `T.cons` showl Nothing ys
-        Nothing -> shows y (showl Nothing ys)
+    showl :: (EncodeCsv a) => [Either Text a] -> Text
+    showl [] = ""
+    showl ys =
+      case sep of
+        Just a  -> a `T.cons` showl' ys
+        Nothing -> showl' ys
+    showl' (y:ys) = shows y (showl ys)
+    showl' []     = ""
 
 -- API
 parseField :: Char -> Text -> Either ParseError Field
@@ -182,7 +184,7 @@ encodeRecord :: Record -> Text
 encodeRecord r = f r <> "\n"
   where
     f :: Record -> Text
-    f = T.intercalate "," . fmap encodeField . un
+    f (Record fs) = encodeList (Just ',') $ fmap Right fs
 
 {-# INLINE encodeField #-}
 encodeField :: Field -> Text
