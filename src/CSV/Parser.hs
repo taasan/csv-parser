@@ -114,6 +114,9 @@ class EncodeCsv a where
 instance IsString Field where
   fromString = Field . Prelude.fromString
 
+instance EncodeCsv Text where
+  encodeCsv = encodeField . Field
+
 instance EncodeCsv Field where
   encodeCsv = encodeField
 
