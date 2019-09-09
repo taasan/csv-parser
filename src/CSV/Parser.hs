@@ -138,7 +138,7 @@ encodeList _ [] = ""
 encodeList sep (x:xs) = shows x (showl xs)
   where
     shows :: (EncodeCsv a) => Either Text a -> (Text -> Text)
-    shows x' s' = bifoldMap Prelude.toText encodeCsv x' <> s'
+    shows = (<>) . bifoldMap Prelude.toText encodeCsv
     showl :: (EncodeCsv a) => [Either Text a] -> Text
     showl [] = ""
     showl ys =
