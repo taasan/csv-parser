@@ -153,10 +153,7 @@ parseRecord :: Char -> Text -> Either ParseError [Field]
 parseRecord = ((<<$>>) Field .) . parsed rowS
 
 fromFields :: (KnownNat n) => [Field] -> Maybe (Record n)
-fromFields fs =
-  case V.fromList fs of
-    Nothing -> Nothing
-    Just v  -> Just (Record v)
+fromFields = Record <<$>> V.fromList
 
 parsed :: (Char -> Parser a) -> Char -> Text -> Either ParseError a
 parsed f sep = P.parse (f sep) ""
