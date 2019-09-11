@@ -63,6 +63,7 @@ import           Prelude
     , Show
     , bifoldMap
     , one
+    , otherwise
     , void
     , ($)
     , (&&)
@@ -97,10 +98,9 @@ newtype Record n =
   deriving (Eq, Ord, Show)
 
 mkRecord :: (KnownNat n) => Int -> [Field] -> Maybe (Record n)
-mkRecord len fs =
-  if len == Prelude.length fs
-    then Record <$> V.fromList fs
-    else Nothing
+mkRecord len fs
+  | len == Prelude.length fs = Record <$> V.fromList fs
+  | otherwise = Nothing
 
 class EncodeCsv a where
   encodeCsv :: a -> Text
