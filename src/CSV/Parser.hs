@@ -99,13 +99,8 @@ newtype Record n =
 mkRecord :: (KnownNat n) => Int -> [Field] -> Maybe (Record n)
 mkRecord len fs =
   if len == Prelude.length fs
-    then record
+    then Record <$> V.fromList fs
     else Nothing
-  where
-    record =
-      case V.fromList fs of
-        Nothing -> Nothing
-        Just a  -> Just (Record a)
 
 class EncodeCsv a where
   encodeCsv :: a -> Text
