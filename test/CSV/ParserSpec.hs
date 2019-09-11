@@ -41,6 +41,8 @@ spec =
         parse CSV.field "\"\"" `shouldParse` ""
       it "parses a single quote" $ parse field "\"\"\"\"" `shouldParse` "\""
       it "fails on unterminated quote" $ p `shouldFailOn` "\""
+      it "fails on unquoted field with quote character" $
+        p `shouldFailOn` "12\""
       it "fails on unterminated quote" $ p `shouldFailOn` "\"a\"a\","
       it "fails on unterminated quote" $ p `shouldFailOn` "\" \" \","
       it "parses an unquoted field" $ p "aaa" `shouldParse` ["aaa"]
