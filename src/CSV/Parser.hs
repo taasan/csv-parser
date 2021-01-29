@@ -176,8 +176,7 @@ escape :: Parser Text
 escape = toText <$> some (q <|> c)
   where
     q = '"' <$ string "\"\"" <?> "escaped double quote"
-    c = anySingleBut '"' <?> "unescaped character"
-    anySingleBut t = satisfy (/= t)
+    c = satisfy (/= '"') <?> "unescaped character"
 
 {-# INLINE fieldS #-}
 fieldS :: Char -> Parser Text
