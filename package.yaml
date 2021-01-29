@@ -4,7 +4,7 @@ github:              "taasan/csv-parser"
 license:             GPL-3
 author:              "Trond Aasan"
 maintainer:          "trond.aasan@gmail.com"
-copyright:           "2019 Trond Aasan"
+copyright:           "2019-2021 Trond Aasan"
 
 extra-source-files:
 - README.md
@@ -17,8 +17,11 @@ description:         A simple CSV parser
 
 dependencies:
 - base-noprelude >= 4.7 && < 5
+- attoparsec
+- conduit
+- conduit-extra
+- parsers
 - relude
-- megaparsec
 - text
 - vector
 - vector-sized
@@ -67,7 +70,7 @@ tests:
     dependencies:
     - csv-parser
     - hspec
-    - hspec-megaparsec
+    - hspec-attoparsec
   hlint:
     main: hlint-test-exe.hs
     source-dirs:         hlint

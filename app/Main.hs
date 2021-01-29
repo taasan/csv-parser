@@ -1,5 +1,4 @@
 {-# LANGUAGE NoImplicitPrelude #-}
-{-# LANGUAGE Unsafe #-}
 
 module Main
   ( main
@@ -9,50 +8,19 @@ import           CSV
 import           Data.Text
     ( Text
     )
-import           Data.Text.IO
-import           Prelude
-    ( Either (Left, Right)
-    , IO
-    , bimap
-    , lines
-    , mapM_
-    , stderr
-    , stdout
-    , (.)
-    , (<$>)
-    )
-import           System.IO
-    ( Handle
-    )
-import           Text.Megaparsec
-    ( errorBundlePretty
-    )
+import           Relude
 
-parse :: Text -> Either Text Text
-parse = bimap (toText . errorBundlePretty) encodeCsv . parseRecord ','
+import           Conduit
+import           Data.Conduit.Attoparsec
 
-handle :: Either Text Text -> (Handle, Text)
-handle x =
-  case x of
-    Left err  -> (stderr, err)
-    Right res -> (stdout, res)
-
-print' :: (Handle, Text) -> IO ()
-print' (h, x) = hPutStr h x
+-- toCsv' :: (Functor f, Bifunctor g, EncodeCsv csv) => f (g a csv) -> f (g a Text)
+-- toCsv' = fmap $ second encodeCsv
+toCsv :: (Bifunctor g, EncodeCsv csv) => g a csv -> g a Text
+toCsv = second encodeCsv
 
 main :: IO ()
 main = do
-  input <- getContents
-  let l = lines input
-  let records = handle . parse <$> l
-  mapM_ print' records
-  -- void $ fmap print' input
-  -- void $ hFlush stdout
-  -- void $ hFlush stderr
-  -- return ()
-  -- where
-  --   print' :: Text -> IO ()
-  --   print' line = do
-  --     case parseRecord ',' line of
-  --       Left bundle -> putStr (errorBundlePretty bundle)
-  --       Right res   -> putText $ encodeCsv res
+  let parser = conduitParser $ row ','
+  runResourceT $
+    runConduit $
+    stdinC .| decodeUtf8C .| parser .| mapC (snd . toCsv) .| mapM_C putText
