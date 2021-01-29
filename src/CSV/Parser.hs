@@ -34,7 +34,6 @@ import           Control.Applicative
 import           Control.Monad
     ( fmap
     , liftM2
-    , return
     )
 import           Data.Char
     ( Char
@@ -62,6 +61,7 @@ import           Prelude
     , first
     , one
     , otherwise
+    , pure
     , some
     , toText
     , void
@@ -188,7 +188,7 @@ emptyStringParser = do
   void quote
   void quote
   notFollowedBy quote
-  return ""
+  pure ""
 
 {-# INLINE textParser #-}
 textParser :: Char -> Parser Text
@@ -208,7 +208,7 @@ rowS c = do
   notFollowedBy endOfInput -- to prevent reading empty line at the end of file
   res <- liftM2 P.sepBy1 fieldS char c
   void endOfLine <|> void endOfInput
-  return res
+  pure res
 
 {- Encoding -}
 {-# INLINE encodeRecords #-}

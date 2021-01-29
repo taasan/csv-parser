@@ -23,6 +23,10 @@
     note: Use 'pass'
     rhs: pass
 - hint:
+    lhs: return
+    note: Use 'pure'
+    rhs: pure
+- hint:
     lhs: '(: [])'
     note: Use `one`
     rhs: one
