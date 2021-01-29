@@ -4,14 +4,14 @@ module Main
   ( main
   ) where
 
-import           CSV
-import           Data.Text
-    ( Text
-    )
-import           Relude
+import CSV
+import Data.Text
+  ( Text
+  )
+import Relude
 
-import           Conduit
-import           Data.Conduit.Attoparsec
+import Conduit
+import Data.Conduit.Attoparsec
 
 -- toCsv' :: (Functor f, Bifunctor g, EncodeCsv csv) => f (g a csv) -> f (g a Text)
 -- toCsv' = fmap $ second encodeCsv

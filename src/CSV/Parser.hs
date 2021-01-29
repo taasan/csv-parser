@@ -22,76 +22,76 @@ module CSV.Parser
   , mkRecord
   ) where
 
-import           Text.Parser.Combinators
-    ( between
-    , notFollowedBy
-    )
+import Text.Parser.Combinators
+  ( between
+  , notFollowedBy
+  )
 
-import           Control.Applicative
-    ( (<$)
-    , (<$>)
-    )
-import           Control.Monad
-    ( fmap
-    , liftM2
-    )
-import           Data.Char
-    ( Char
-    )
-import           Data.String
-    ( IsString (fromString)
-    )
-import           Data.Text
-    ( Text
-    )
+import Control.Applicative
+  ( (<$)
+  , (<$>)
+  )
+import Control.Monad
+  ( fmap
+  , liftM2
+  )
+import Data.Char
+  ( Char
+  )
+import Data.String
+  ( IsString (fromString)
+  )
+import Data.Text
+  ( Text
+  )
 import qualified Data.Text as T
-import           Data.Vector.Sized
-    ( Vector
-    )
+import Data.Vector.Sized
+  ( Vector
+  )
 import qualified Data.Vector.Sized as V
-import           Prelude
-    ( Either (..)
-    , Eq
-    , Int
-    , KnownNat
-    , Maybe (..)
-    , Ord
-    , Show
-    , bifoldMap
-    , first
-    , one
-    , otherwise
-    , pure
-    , some
-    , toText
-    , void
-    , ($)
-    , (&&)
-    , (.)
-    , (/=)
-    , (<<$>>)
-    , (<>)
-    , (<|>)
-    , (==)
-    )
+import Prelude
+  ( Either (..)
+  , Eq
+  , Int
+  , KnownNat
+  , Maybe (..)
+  , Ord
+  , Show
+  , bifoldMap
+  , first
+  , one
+  , otherwise
+  , pure
+  , some
+  , toText
+  , void
+  , ($)
+  , (&&)
+  , (.)
+  , (/=)
+  , (<<$>>)
+  , (<>)
+  , (<|>)
+  , (==)
+  )
 import qualified Prelude
-import           Relude.Extra.Newtype
-    ( un
-    )
+import Relude.Extra.Newtype
+  ( un
+  )
 
 -- import Relude.Functor.Reexport (first)
 import qualified Data.Attoparsec.Combinator as P
-import           Data.Attoparsec.Text
-    ( Parser
-    , char
-    , endOfInput
-    , endOfLine
-    , parseOnly
-    , satisfy
-    , string
-    , takeWhile
-    , (<?>)
-    )
+import Data.Attoparsec.Text
+  ( Parser
+  , char
+  , endOfInput
+  , endOfLine
+  , parseOnly
+  , satisfy
+  , string
+  , takeWhile
+  , (<?>)
+  )
 
 -- TYPES
 newtype Field =
@@ -143,10 +143,10 @@ encodeList sep (x:xs) = shows x (showl xs)
     showl [] = ""
     showl ys =
       case sep of
-        Just a  -> a `T.cons` showl' ys
+        Just a -> a `T.cons` showl' ys
         Nothing -> showl' ys
     showl' (y:ys) = shows y (showl ys)
-    showl' []     = ""
+    showl' [] = ""
 
 -- API
 parseField :: Char -> Text -> Either Text Field
@@ -225,4 +225,4 @@ encodeField (Field s) = T.concat ["\"", T.concatMap esc s, "\""]
   where
     esc :: Char -> Text
     esc '"' = "\"\""
-    esc c   = one c
+    esc c = one c

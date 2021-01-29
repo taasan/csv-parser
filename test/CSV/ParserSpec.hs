@@ -5,26 +5,26 @@ module CSV.ParserSpec
   ( spec
   ) where
 
-import           CSV.Parser
+import CSV.Parser
 import qualified Data.Attoparsec.Text as P
 import qualified Data.Text as T
-import           Prelude
-    ( Either (..)
-    , Show
-    , String
-    , Text
-    , fmap
-    , replicate
-    , unlines
-    , ($)
-    , (.)
-    , (<$>)
-    , (<>)
-    )
-import           Test.Hspec
-import           Test.Hspec.Attoparsec hiding
-    ( shouldFailOn
-    )
+import Prelude
+  ( Either (..)
+  , Show
+  , String
+  , Text
+  , fmap
+  , replicate
+  , unlines
+  , ($)
+  , (.)
+  , (<$>)
+  , (<>)
+  )
+import Test.Hspec
+import Test.Hspec.Attoparsec hiding
+  ( shouldFailOn
+  )
 import qualified Test.Hspec.Attoparsec as Spec
 
 parse :: Parser a -> Text -> Either String a

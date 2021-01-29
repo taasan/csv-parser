@@ -12,4 +12,4 @@ module CSV
   , toText
   ) where
 
-import           CSV.Parser
+import CSV.Parser

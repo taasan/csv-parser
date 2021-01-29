@@ -5,26 +5,26 @@ module Main
   ( main
   ) where
 
-import           Criterion.Main
-import           CSV.Parser
-    ( EncodeCsv (..)
-    , Field (..)
-    , Parser
-    )
+import Criterion.Main
+import CSV.Parser
+  ( EncodeCsv (..)
+  , Field (..)
+  , Parser
+  )
 import qualified CSV.Parser as CSV
 import qualified Data.Attoparsec.Text as P
 import qualified Data.Text as T
-import           Prelude
-    ( Either
-    , IO
-    , Int
-    , String
-    , Text
-    , replicate
-    , ($)
-    , (.)
-    )
-import           Text.Printf
+import Prelude
+  ( Either
+  , IO
+  , Int
+  , String
+  , Text
+  , replicate
+  , ($)
+  , (.)
+  )
+import Text.Printf
 
 parse :: Parser a -> Text -> Either String a
 parse = P.parseOnly

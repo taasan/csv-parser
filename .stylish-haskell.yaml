@@ -19,9 +19,9 @@ steps:
   # and only applies to statements where each element occupies a single
   # line.
   - simple_align:
-      cases: true
-      top_level_patterns: true
-      records: true
+      cases: false
+      top_level_patterns: false
+      records: false
 
   # Import cleanup
   - imports:
@@ -39,7 +39,7 @@ steps:
       # - none: Do not perform any alignment.
       #
       # Default: global.
-      align: global
+      align: none
 
       # The following options affect only import list alignment.
       #
@@ -126,7 +126,7 @@ steps:
       #
       # - module_name: align under start of module name.
       #   Useful for 'file' and 'group' align settings.
-      list_padding: 4
+      list_padding: 2
 
       # Separate lists option affects formatting of import list for type
       # or class. The only difference is single space between type and list
@@ -159,7 +159,7 @@ steps:
       #   > import Data.Foo (foo)
       #
       # Default: false
-      space_surround: false
+      space_surround: true
 
   # Language pragmas
   - language_pragmas:
@@ -190,10 +190,10 @@ steps:
       remove_redundant: true
 
   # Replace tabs by spaces. This is disabled by default.
-  - tabs:
-      # Number of spaces to use for each tab. Default: 8, as specified by the
-      # Haskell report.
-      spaces: 8
+  # - tabs:
+  #     # Number of spaces to use for each tab. Default: 8, as specified by the
+  #     # Haskell report.
+  #     spaces: 8
 
   # Remove trailing whitespace
   - trailing_whitespace: {}
@@ -218,12 +218,11 @@ columns: 80
 #
 # Default: native.
 newline: native
-
 # Sometimes, language extensions are specified in a cabal file or from the
 # command line instead of using language pragmas in the file. stylish-haskell
 # needs to be aware of these, so it can parse the file correctly.
 #
 # No language extensions are enabled by default.
 # language_extensions:
-  # - TemplateHaskell
-  # - QuasiQuotes
+# - TemplateHaskell
+# - QuasiQuotes
