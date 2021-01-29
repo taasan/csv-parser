@@ -6,16 +6,13 @@ module CSV.ParserSpec
   ) where
 
 import           CSV.Parser
-import qualified CSV.Parser as CSV
-import           Data.Either
-    ( Either (..)
-    )
-import           Data.Text
-    ( Text
-    )
+import qualified Data.Attoparsec.Text as P
 import qualified Data.Text as T
 import           Prelude
-    ( flip
+    ( Either (..)
+    , Show
+    , String
+    , Text
     , fmap
     , replicate
     , unlines
@@ -25,46 +22,52 @@ import           Prelude
     , (<>)
     )
 import           Test.Hspec
-import           Test.Hspec.Megaparsec
-import qualified Text.Megaparsec as P
+import           Test.Hspec.Attoparsec hiding
+    ( shouldFailOn
+    )
+import qualified Test.Hspec.Attoparsec as Spec
 
-parse :: Parser a -> Text -> Either ParseError a
-parse = flip P.parse ""
+parse :: Parser a -> Text -> Either String a
+parse = P.parseOnly
+
+shouldFailOn :: (Show a) => Parser a -> Text -> Expectation
+shouldFailOn = Spec.shouldFailOn
 
 spec :: Spec
 spec =
   describe "Parser functions" $ do
     context "field" $ do
-      let p = parse row
-      it "parses an empty unquoted field" $ parse field "" `shouldParse` ""
-      it "parses an empty quoted field" $
-        parse CSV.field "\"\"" `shouldParse` ""
-      it "parses a single quote" $ parse field "\"\"\"\"" `shouldParse` "\""
-      it "fails on unterminated quote" $ p `shouldFailOn` "\""
-      it "fails on unterminated quote" $ p `shouldFailOn` "\"a\"a\","
-      it "fails on unterminated quote" $ p `shouldFailOn` "\" \" \","
-      it "parses an unquoted field" $ p "aaa" `shouldParse` ["aaa"]
-      it "parses a quoted field" $ p "\"a\"\"aa\"" `shouldParse` ["a\"aa"]
+      it "parses an empty unquoted field" $ parse field' "" `shouldParse` ""
+      it "parses an empty quoted field" $ parse field' "\"\"" `shouldParse` ""
+      it "parses a single quote" $ parse field' "\"\"\"\"" `shouldParse` "\""
+      it "fails on unterminated quote" $ row' `shouldFailOn` "\""
+      it "fails on unquoted field with quote character" $
+        row' `shouldFailOn` "12\""
+      it "fails on unterminated quote" $ row' `shouldFailOn` "\"a\"a\","
+      it "fails on unterminated quote" $ row' `shouldFailOn` "\" \" \","
+      it "parses an unquoted field" $ parse row' "aaa" `shouldParse` ["aaa"]
+      it "parses a quoted field" $
+        parse row' "\"a\"\"aa\"" `shouldParse` ["a\"aa"]
       it "parses a quoted field with LF" $
-        p "\"a\"\"a\na\"" `shouldParse` ["a\"a\na"]
+        parse row' "\"a\"\"a\na\"" `shouldParse` ["a\"a\na"]
       it "parses a quoted field with CRLF" $
-        p "\"a\"\"a\r\na\"" `shouldParse` ["a\"a\r\na"]
+        parse row' "\"a\"\"a\r\na\"" `shouldParse` ["a\"a\r\na"]
       it "stops parsing on separator" $
-        parse field "aaa,bbb,ccc" `shouldParse` "aaa"
+        parse field' "aaa,bbb,ccc" `shouldParse` "aaa"
     context "row" $ do
-      it "fails on empty line" $ parse CSV.row `shouldFailOn` ""
-      it "parses a field with a single quote" $
-        parse row "\"\"\"\"" `shouldParse` ["\""]
-      it "parses a line with several empty fields" $
-        parse CSV.row ",,," `shouldParse` ["", "", "", ""]
-      it "parses a line with several unquoted fields" $
-        parse CSV.row "aaa,bbb,ccc" `shouldParse` ["aaa", "bbb", "ccc"]
-      it "parses row with TAB separator" $
-        parse (CSV.rowS '\t') "aaa\tbbb\tccc" `shouldParse`
+      it "fails on empty line" $ row' `shouldFailOn` ""
+      testRow "parses a field with a single quote" "\"\"\"\"" ["\""]
+      testRow "parses a line with several empty fields" ",,," ["", "", "", ""]
+      testRow
+        "parses a line with several unquoted fields"
+        "aaa,bbb,ccc"
         ["aaa", "bbb", "ccc"]
-      it "parses line with mixed (un-)quoted fields" $
-        parse CSV.row "\"aa\"\"a\",bbb,\"ccc\"" `shouldParse`
+      testRow
+        "parses line with mixed (un-)quoted fields"
+        "\"aa\"\"a\",bbb,\"ccc\""
         ["aa\"a", "bbb", "ccc"]
+      it "parses row with TAB separator" $
+        parse (rowS '\t') "aaa\tbbb\tccc" `shouldParse` ["aaa", "bbb", "ccc"]
     describe "instance EncodeCsv" $ do
       context "encode field" $ do
         it "encodes empty string" $ encodeCsv empty `shouldBe` ("" :: Text)
@@ -92,12 +95,16 @@ spec =
       it "parses with alternative separator" $
         parseField ';' "\"A\";" `shouldBe` (Right . Field $ "A")
     describe "Helpers" . context "escape" $ do
-      let p = parse escape
-      it "parses one quote" $ p "\"\"" `shouldBe` Right "\""
-      it "fails on unterminated quote" $ p `shouldFailOn` "\" \" \""
-      it "fails on unterminated quote" $ p `shouldFailOn` "\"\\\"\\\"\""
-      it "fails on unterminated quote" $ p `shouldFailOn` "\" \" \""
+      it "parses one quote" $ parse escape "\"\"" `shouldBe` Right "\""
+      it "fails on unterminated quote" $ escape `shouldFailOn` "\" \" \""
+      it "fails on unterminated quote" $ escape `shouldFailOn` "\"\\\"\\\"\""
+      it "fails on unterminated quote" $ escape `shouldFailOn` "\" \" \""
+    describe "Attoparsec" . context "endOfLine" $ do
+      it "succeeds on \\n" $ parse P.endOfLine "\n" `shouldBe` Right ()
+      it "succeeds on \\r\\n" $ parse P.endOfLine "\r\n" `shouldBe` Right ()
   where
+    field' = fieldS ','
+    row' = rowS ','
     empty = Field ""
     emptyRow n = replicate n empty
     uqRow n = Field <$> replicate n "A"
@@ -105,11 +112,12 @@ spec =
       unlines . replicate n $ T.intercalate "," (replicate n "\"A\"")
     qRow n = Field <$> fmap quote (replicate n "A")
     qRowResult n = unlines (replicate n "\"\"\"A\"\"\"")
-    parseField' :: Text -> Either ParseError Field
     parseField' = parseField ','
+    parseRowLF s = parse row' $ s <> "\n"
+    parseRowCRLF s = parse row' $ s <> "\r\n"
+    testRow desc input expected = do
+      it (desc <> " (LF)") $ parseRowLF input `shouldParse` expected
+      it (desc <> " (CRLF)") $ parseRowCRLF input `shouldParse` expected
 
---    emptyRow :: (KnownNat n) => Int -> Record n
---    uqRow :: (KnownNat n) => Int -> Record n
---    qRow :: (KnownNat n) => Int -> Record n
 quote :: Text -> Text
 quote t = "\"" <> t <> "\""

@@ -1,0 +1,136 @@
+cabal-version: 1.12
+
+-- This file has been generated from package.yaml by hpack version 0.33.0.
+--
+-- see: https://github.com/sol/hpack
+--
+-- hash: 982c5610d2ba0ae2b5ac4f30c0965a8c5a99990a04c60625ec0d344126848be5
+
+name:           csv-parser
+version:        0.1.0.0
+description:    A simple CSV parser
+homepage:       https://github.com/taasan/csv-parser#readme
+bug-reports:    https://github.com/taasan/csv-parser/issues
+author:         Trond Aasan
+maintainer:     trond.aasan@gmail.com
+copyright:      2019-2021 Trond Aasan
+license:        GPL-3
+license-file:   LICENSE
+build-type:     Simple
+extra-source-files:
+    README.md
+
+source-repository head
+  type: git
+  location: https://github.com/taasan/csv-parser
+
+library
+  exposed-modules:
+      CSV
+      CSV.Encoder
+      CSV.Parser
+      Prelude
+  other-modules:
+      Paths_csv_parser
+  hs-source-dirs:
+      src
+  ghc-options: -O2 -Wall -Werror -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints
+  build-depends:
+      attoparsec
+    , base-noprelude >=4.7 && <5
+    , conduit
+    , conduit-extra
+    , parsers
+    , relude
+    , text
+    , vector
+    , vector-sized
+  default-language: Haskell2010
+
+executable csv-parser-exe
+  main-is: Main.hs
+  other-modules:
+      Paths_csv_parser
+  hs-source-dirs:
+      app
+  ghc-options: -O2 -Werror -Wall -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints
+  build-depends:
+      attoparsec
+    , base-noprelude >=4.7 && <5
+    , conduit
+    , conduit-extra
+    , csv-parser
+    , parsers
+    , relude
+    , text
+    , vector
+    , vector-sized
+  default-language: Haskell2010
+
+test-suite csv-parser-test
+  type: exitcode-stdio-1.0
+  main-is: Spec.hs
+  other-modules:
+      CSV.ParserSpec
+      Paths_csv_parser
+  hs-source-dirs:
+      test
+  ghc-options: -O2 -Werror -Wall -Worphans -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints
+  build-depends:
+      attoparsec
+    , base-noprelude >=4.7 && <5
+    , conduit
+    , conduit-extra
+    , csv-parser
+    , hspec
+    , hspec-attoparsec
+    , parsers
+    , relude
+    , text
+    , vector
+    , vector-sized
+  default-language: Haskell2010
+
+test-suite hlint
+  type: exitcode-stdio-1.0
+  main-is: hlint-test-exe.hs
+  other-modules:
+      Paths_csv_parser
+  hs-source-dirs:
+      hlint
+  ghc-options: -threaded -with-rtsopts=-N
+  build-depends:
+      attoparsec
+    , base-noprelude >=4.7 && <5
+    , conduit
+    , conduit-extra
+    , csv-parser
+    , hlint-test
+    , parsers
+    , relude
+    , text
+    , vector
+    , vector-sized
+  default-language: Haskell2010
+
+benchmark csv-parser-benchmarks
+  type: exitcode-stdio-1.0
+  main-is: Main.hs
+  other-modules:
+      Paths_csv_parser
+  hs-source-dirs:
+      bench
+  ghc-options: -O2 -Werror -Wall -Worphans -Wcompat -Wincomplete-record-updates -Wincomplete-uni-patterns -Wredundant-constraints
+  build-depends:
+      attoparsec
+    , base-noprelude >=4.7 && <5
+    , conduit
+    , conduit-extra
+    , criterion
+    , csv-parser
+    , parsers
+    , relude
+    , text
+    , vector
+    , vector-sized
+  default-language: Haskell2010

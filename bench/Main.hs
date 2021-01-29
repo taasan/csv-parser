@@ -9,26 +9,25 @@ import           Criterion.Main
 import           CSV.Parser
     ( EncodeCsv (..)
     , Field (..)
-    , ParseError
     , Parser
     )
 import qualified CSV.Parser as CSV
+import qualified Data.Attoparsec.Text as P
 import qualified Data.Text as T
 import           Prelude
     ( Either
     , IO
     , Int
+    , String
     , Text
-    , flip
     , replicate
     , ($)
     , (.)
     )
-import qualified Text.Megaparsec as P
 import           Text.Printf
 
-parse :: Parser a -> Text -> Either ParseError a
-parse = flip P.parse ""
+parse :: Parser a -> Text -> Either String a
+parse = P.parseOnly
 
 unquoted :: Int -> Text
 unquoted n = T.intercalate "," $ replicate n "aaaaaaa"
