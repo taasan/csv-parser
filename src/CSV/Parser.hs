@@ -59,6 +59,7 @@ import Prelude
   , Show
   , bifoldMap
   , first
+  , mconcat
   , one
   , otherwise
   , pure
@@ -87,9 +88,9 @@ import Data.Attoparsec.Text
   , endOfInput
   , endOfLine
   , parseOnly
-  , satisfy
   , string
   , takeWhile
+  , takeWhile1
   , (<?>)
   )
 
@@ -173,10 +174,10 @@ quote = char '"'
 
 {-# INLINE escape #-}
 escape :: Parser Text
-escape = toText <$> some (q <|> c)
+escape = mconcat <$> some (q <|> c)
   where
-    q = '"' <$ string "\"\"" <?> "escaped double quote"
-    c = satisfy (/= '"') <?> "unescaped character"
+    q = "\"" <$ string "\"\"" <?> "escaped double quote"
+    c = takeWhile1 (/= '"') <?> "unescaped character"
 
 {-# INLINE fieldS #-}
 fieldS :: Char -> Parser Text
