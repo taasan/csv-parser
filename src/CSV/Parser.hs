@@ -215,7 +215,7 @@ encodeRecords :: [[Field]] -> Text
 encodeRecords r = encodeList Nothing $ fmap Right r
 
 encodeRecord :: [Field] -> Text
-encodeRecord fs = encodeList (Just ',') (fmap Right fs) <> "\n"
+encodeRecord fs = encodeList (Just ',') (fmap Right fs) <> "\r\n"
 
 -- encodeCsv $ V.toList v
 {-# INLINE encodeField #-}

@@ -15,7 +15,6 @@ import Prelude
   , Text
   , fmap
   , replicate
-  , unlines
   , ($)
   , (.)
   , (<$>)
@@ -79,7 +78,7 @@ spec =
           encodeCsv (Field "A\"B") `shouldBe` ("\"A\"\"B\"" :: Text)
       context "Show record" $ do
         it "empty fields" $
-          encodeCsv (replicate 5 empty) `shouldBe` (",,,,\n" :: Text)
+          encodeCsv (replicate 5 empty) `shouldBe` (",,,,\r\n" :: Text)
         it "unquoted fields" $ encodeCsv (uqRow 1) `shouldBe` uqRowResult 1
         it "quoted fields" $ encodeCsv (qRow 1) `shouldBe` qRowResult 1
       context "Show records" $ do
@@ -108,6 +107,7 @@ spec =
     empty = Field ""
     emptyRow n = replicate n empty
     uqRow n = Field <$> replicate n "A"
+    unlines s = T.intercalate "\r\n" s <> "\r\n"
     uqRowResult n =
       unlines . replicate n $ T.intercalate "," (replicate n "\"A\"")
     qRow n = Field <$> fmap quote (replicate n "A")
