@@ -60,7 +60,6 @@ import Prelude
   , bifoldMap
   , first
   , mconcat
-  , one
   , otherwise
   , pure
   , some
@@ -222,8 +221,4 @@ encodeRecord fs = encodeList (Just ',') (fmap Right fs) <> "\r\n"
 {-# INLINE encodeField #-}
 encodeField :: Field -> Text
 encodeField (Field "") = ""
-encodeField (Field s) = T.concat ["\"", T.concatMap esc s, "\""]
-  where
-    esc :: Char -> Text
-    esc '"' = "\"\""
-    esc c = one c
+encodeField (Field s) = "\"" <> T.replace "\"" "\"\"" s <> "\""
