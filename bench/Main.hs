@@ -10,6 +10,7 @@ import CSV.Parser
   ( EncodeCsv (..)
   , Field (..)
   , Parser
+  , rfc4180
   )
 import qualified CSV.Parser as CSV
 import qualified Data.Attoparsec.Text as P
@@ -33,7 +34,7 @@ unquoted :: Int -> Text
 unquoted n = T.intercalate "," $ replicate n "aaaaaaa"
 
 quoted :: Int -> Text
-quoted n = T.intercalate "," . replicate n $ encodeCsv $ Field "\"abc"
+quoted n = T.intercalate "," . replicate n $ encodeCsv rfc4180 $ Field "\"abc"
 
 main :: IO ()
 main = do

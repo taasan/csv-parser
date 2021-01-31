@@ -6,6 +6,9 @@
 module CSV.Parser
   ( Parser
   , EncodeCsv(..)
+  , CsvOptions(..)
+  , RecordSeparator(..)
+  , FieldSeparator(..)
   , Field(..)
   , Record(..)
   , row
@@ -20,6 +23,7 @@ module CSV.Parser
   , quotedStringParser
   , escapedQuotedText
   , mkRecord
+  , rfc4180
   ) where
 
 import Text.Parser.Combinators
@@ -57,6 +61,7 @@ import Prelude
   , Maybe (..)
   , Ord
   , Show
+  , ToText
   , first
   , mconcat
   , otherwise
@@ -94,6 +99,31 @@ import Data.Attoparsec.Text
   )
 
 -- TYPES
+data FieldSeparator
+  = Comma
+  | Tabulator
+
+data RecordSeparator
+  = CRLF
+  | LF
+
+instance ToText FieldSeparator where
+  toText Comma = ","
+  toText Tabulator = "\t"
+
+instance ToText RecordSeparator where
+  toText CRLF = "\r\n"
+  toText LF = "\n"
+
+data CsvOptions =
+  CsvOptions
+    { fieldSeparator :: FieldSeparator
+    , recordSeparator :: RecordSeparator
+    }
+
+rfc4180 :: CsvOptions
+rfc4180 = CsvOptions {fieldSeparator = Comma, recordSeparator = CRLF}
+
 newtype Field =
   Field Text
   deriving (Eq, Ord, Show)
@@ -108,29 +138,33 @@ mkRecord len fs
   | otherwise = Nothing
 
 class EncodeCsv a where
-  encodeCsv :: a -> Text
+  encodeCsv :: CsvOptions -> a -> Text
 
 -- INSTANCES
 instance IsString Field where
   fromString = Field . Prelude.fromString
 
 instance EncodeCsv Text where
-  encodeCsv = encodeField . Field
+  encodeCsv options = encodeField options . Field
 
 instance EncodeCsv Field where
   encodeCsv = encodeField
 
 instance EncodeCsv [Field] where
-  encodeCsv = (<> "\r\n") . (T.intercalate "," . fmap encodeField)
+  encodeCsv options =
+    (<> rsep) . (T.intercalate fsep . fmap (encodeField options))
+    where
+      fsep = toText . fieldSeparator $ options
+      rsep = toText . recordSeparator $ options
 
 instance EncodeCsv [[Field]] where
-  encodeCsv = mconcat . fmap encodeCsv
+  encodeCsv options = mconcat . fmap (encodeCsv options)
 
 instance EncodeCsv (Record n) where
-  encodeCsv = encodeCsv . V.toList . un
+  encodeCsv options = encodeCsv options . V.toList . un
 
 instance EncodeCsv [Record n] where
-  encodeCsv = mconcat . fmap encodeCsv
+  encodeCsv options = mconcat . fmap (encodeCsv options)
 
 -- API
 parseField :: Char -> Text -> Either Text Field
@@ -203,6 +237,6 @@ rowS c = do
   pure res
 
 {-# INLINE encodeField #-}
-encodeField :: Field -> Text
-encodeField "" = ""
-encodeField (Field s) = "\"" <> T.replace "\"" "\"\"" s <> "\""
+encodeField :: CsvOptions -> Field -> Text
+encodeField _ "" = ""
+encodeField _ (Field s) = "\"" <> T.replace "\"" "\"\"" s <> "\""

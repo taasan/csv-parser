@@ -1,6 +1,8 @@
 -- {-# LANGUAGE NoImplicitPrelude #-}
 module CSV
   ( EncodeCsv(..)
+  , CsvOptions(..)
+  , FieldSeparator(..)
   , Parser
   , Field(..)
   , Record(..)
@@ -9,6 +11,7 @@ module CSV
   , field
   , parseField
   , parseRecord
+  , rfc4180
   , toText
   ) where
 

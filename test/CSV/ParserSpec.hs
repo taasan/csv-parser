@@ -73,24 +73,28 @@ spec =
         parse (rowS '\t') "aaa\tbbb\tccc" `shouldParse` ["aaa", "bbb", "ccc"]
     describe "instance EncodeCsv" $ do
       context "encode field" $ do
-        it "encodes empty string" $ encodeCsv empty `shouldBe` ("" :: Text)
+        it "encodes empty string" $ encodeCsv' empty `shouldBe` ("" :: Text)
         it "encloses value in quotes" $
-          encodeCsv (Field "AB") `shouldBe` "\"AB\""
+          encodeCsv' (Field "AB") `shouldBe` "\"AB\""
         it "encodes one quote" $
-          encodeCsv (Field "\"") `shouldBe` ("\"\"\"\"" :: Text)
+          encodeCsv' (Field "\"") `shouldBe` ("\"\"\"\"" :: Text)
         it "escapes quotes" $
-          encodeCsv (Field "A\"B") `shouldBe` ("\"A\"\"B\"" :: Text)
+          encodeCsv' (Field "A\"B") `shouldBe` ("\"A\"\"B\"" :: Text)
       context "Show record" $ do
         it "empty fields" $
-          encodeCsv (replicate 5 empty) `shouldBe` (",,,,\r\n" :: Text)
-        it "unquoted fields" $ encodeCsv (uqRow 1) `shouldBe` uqRowResult 1
-        it "quoted fields" $ encodeCsv (qRow 1) `shouldBe` qRowResult 1
+          encodeCsv' (replicate 5 empty) `shouldBe` (",,,,\r\n" :: Text)
+        it "unquoted fields" $ encodeCsv' (uqRow 1) `shouldBe` uqRowResult 1
+        it "quoted fields" $ encodeCsv' (qRow 1) `shouldBe` qRowResult 1
+        it "TAB separator" $
+          let opt = rfc4180 {fieldSeparator = Tabulator}
+           in encodeCsv opt (replicate 5 empty) `shouldBe`
+              ("\t\t\t\t\r\n" :: Text)
       context "Show records" $ do
         it "empty fields" $
-          encodeCsv (replicate 5 $ emptyRow 5) `shouldBe`
+          encodeCsv' (replicate 5 $ emptyRow 5) `shouldBe`
           (unlines . replicate 5) ",,,,"
         it "unquoted fields" $
-          encodeCsv (replicate 5 $ uqRow 5) `shouldBe` uqRowResult 5
+          encodeCsv' (replicate 5 $ uqRow 5) `shouldBe` uqRowResult 5
     describe "API" . context "parseField" $ do
       it "parses empty" $ parseField' "," `shouldBe` Right empty
       it "parses unquoted" $ parseField' "A," `shouldBe` (Right . Field $ "A")
@@ -110,6 +114,8 @@ spec =
       it "succeeds on \\n" $ parse P.endOfLine "\n" `shouldBe` Right ()
       it "succeeds on \\r\\n" $ parse P.endOfLine "\r\n" `shouldBe` Right ()
   where
+    encodeCsv' :: EncodeCsv a => a -> Text
+    encodeCsv' = encodeCsv rfc4180
     field' = fieldS ','
     row' = rowS ','
     empty = Field ""

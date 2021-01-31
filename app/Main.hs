@@ -16,7 +16,7 @@ import Data.Conduit.Attoparsec
 -- toCsv' :: (Functor f, Bifunctor g, EncodeCsv csv) => f (g a csv) -> f (g a Text)
 -- toCsv' = fmap $ second encodeCsv
 toCsv :: (Bifunctor g, EncodeCsv csv) => g a csv -> g a Text
-toCsv = second encodeCsv
+toCsv = second $ encodeCsv rfc4180
 
 main :: IO ()
 main = do
