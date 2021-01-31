@@ -211,11 +211,7 @@ emptyQuotedStringParser = do
 
 {-# INLINE textParser #-}
 textParser :: Char -> Parser Text
-textParser c = do
-  notFollowedBy quote
-  takeWhile p
-  where
-    p x = x /= c && x /= '\r' && x /= '\n' && x /= '"'
+textParser c = takeWhile (\x -> x /= c && x /= '\r' && x /= '\n' && x /= '"')
 
 {-# INLINE skipSpace #-}
 skipSpace :: Parser ()
@@ -233,7 +229,7 @@ rowS :: Char -> Parser [Text]
 rowS c = do
   notFollowedBy endOfInput -- to prevent reading empty line at the end of file
   res <- liftM2 P.sepBy1 fieldS char c
-  void endOfLine <|> void endOfInput
+  endOfLine <|> endOfInput
   pure res
 
 {-# INLINE encodeField #-}
