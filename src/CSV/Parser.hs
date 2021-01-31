@@ -57,7 +57,6 @@ import Prelude
   , Maybe (..)
   , Ord
   , Show
-  , bifoldMap
   , first
   , mconcat
   , otherwise
@@ -65,7 +64,6 @@ import Prelude
   , some
   , toText
   , void
-  , ($)
   , (&&)
   , (.)
   , (/=)
@@ -121,32 +119,16 @@ instance EncodeCsv Field where
   encodeCsv = encodeField
 
 instance EncodeCsv [Field] where
-  encodeCsv = encodeRecord
+  encodeCsv = (<> "\r\n") . (T.intercalate "," . fmap encodeField)
 
 instance EncodeCsv [[Field]] where
-  encodeCsv = encodeRecords
+  encodeCsv = mconcat . fmap encodeCsv
 
 instance EncodeCsv (Record n) where
-  encodeCsv = encodeRecord . V.toList . un
+  encodeCsv = encodeCsv . V.toList . un
 
 instance EncodeCsv [Record n] where
-  encodeCsv = encodeList Nothing . (Right <$>)
-
--- Helpers
-encodeList :: (EncodeCsv a) => Maybe Char -> [Either Text a] -> Text
-encodeList _ [] = ""
-encodeList sep (x:xs) = shows x (showl xs)
-  where
-    shows :: (EncodeCsv a) => Either Text a -> (Text -> Text)
-    shows = (<>) . bifoldMap toText encodeCsv
-    showl :: (EncodeCsv a) => [Either Text a] -> Text
-    showl [] = ""
-    showl ys =
-      case sep of
-        Just a -> a `T.cons` showl' ys
-        Nothing -> showl' ys
-    showl' (y:ys) = shows y (showl ys)
-    showl' [] = ""
+  encodeCsv = mconcat . fmap encodeCsv
 
 -- API
 parseField :: Char -> Text -> Either Text Field
@@ -209,16 +191,7 @@ rowS c = do
   void endOfLine <|> void endOfInput
   pure res
 
-{- Encoding -}
-{-# INLINE encodeRecords #-}
-encodeRecords :: [[Field]] -> Text
-encodeRecords r = encodeList Nothing $ fmap Right r
-
-encodeRecord :: [Field] -> Text
-encodeRecord fs = encodeList (Just ',') (fmap Right fs) <> "\r\n"
-
--- encodeCsv $ V.toList v
 {-# INLINE encodeField #-}
 encodeField :: Field -> Text
-encodeField (Field "") = ""
+encodeField "" = ""
 encodeField (Field s) = "\"" <> T.replace "\"" "\"\"" s <> "\""
