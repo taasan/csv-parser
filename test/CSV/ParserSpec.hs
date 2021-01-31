@@ -53,6 +53,10 @@ spec =
         parse row' "\"a\"\"a\r\na\"" `shouldParse` ["a\"a\r\na"]
       it "stops parsing on separator" $
         parse field' "aaa,bbb,ccc" `shouldParse` "aaa"
+      it "skips spaces before quoted field" $
+        parse field' "   \"aaa\"" `shouldParse` "aaa"
+      it "skips spaces after quoted field" $
+        parse field' "\"aaa\"   " `shouldParse` "aaa"
     context "row" $ do
       it "fails on empty line" $ row' `shouldFailOn` ""
       testRow "parses a field with a single quote" "\"\"\"\"" ["\""]
@@ -93,11 +97,15 @@ spec =
       it "parses quoted" $ parseField' "\"A\"," `shouldBe` (Right . Field $ "A")
       it "parses with alternative separator" $
         parseField ';' "\"A\";" `shouldBe` (Right . Field $ "A")
-    describe "Helpers" . context "escape" $ do
-      it "parses one quote" $ parse escape "\"\"" `shouldBe` Right "\""
-      it "fails on unterminated quote" $ escape `shouldFailOn` "\" \" \""
-      it "fails on unterminated quote" $ escape `shouldFailOn` "\"\\\"\\\"\""
-      it "fails on unterminated quote" $ escape `shouldFailOn` "\" \" \""
+    describe "Helpers" . context "escapedQuotedText" $ do
+      it "parses one quote" $
+        parse escapedQuotedText "\"\"" `shouldBe` Right "\""
+      it "fails on unterminated quote" $
+        escapedQuotedText `shouldFailOn` "\" \" \""
+      it "fails on unterminated quote" $
+        escapedQuotedText `shouldFailOn` "\"\\\"\\\"\""
+      it "fails on unterminated quote" $
+        escapedQuotedText `shouldFailOn` "\" \" \""
     describe "Attoparsec" . context "endOfLine" $ do
       it "succeeds on \\n" $ parse P.endOfLine "\n" `shouldBe` Right ()
       it "succeeds on \\r\\n" $ parse P.endOfLine "\r\n" `shouldBe` Right ()

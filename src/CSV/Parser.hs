@@ -16,9 +16,9 @@ module CSV.Parser
   , parseRecord
   , fromFields
   , textParser
-  , emptyStringParser
-  , stringParser
-  , escape
+  , emptyQuotedStringParser
+  , quotedStringParser
+  , escapedQuotedText
   , mkRecord
   ) where
 
@@ -64,6 +64,7 @@ import Prelude
   , some
   , toText
   , void
+  , ($)
   , (&&)
   , (.)
   , (/=)
@@ -85,6 +86,7 @@ import Data.Attoparsec.Text
   , endOfInput
   , endOfLine
   , parseOnly
+  , skipMany
   , string
   , takeWhile
   , takeWhile1
@@ -153,22 +155,24 @@ row sep = Field <<$>> rowS sep
 quote :: Parser Char
 quote = char '"'
 
-{-# INLINE escape #-}
-escape :: Parser Text
-escape = mconcat <$> some (q <|> c)
+{-# INLINE escapedQuotedText #-}
+escapedQuotedText :: Parser Text
+escapedQuotedText = mconcat <$> some (q <|> c)
   where
     q = "\"" <$ string "\"\"" <?> "escaped double quote"
     c = takeWhile1 (/= '"') <?> "unescaped character"
 
 {-# INLINE fieldS #-}
 fieldS :: Char -> Parser Text
-fieldS = (<|> stringParser) . (<|> P.try emptyStringParser) . textParser
+fieldS sep = emptyQuotedStringParser <|> quotedStringParser <|> textParser sep
 
-emptyStringParser :: Parser Text
-emptyStringParser = do
+emptyQuotedStringParser :: Parser Text
+emptyQuotedStringParser = do
+  skipSpace
   void quote
   void quote
   notFollowedBy quote
+  skipSpace
   pure ""
 
 {-# INLINE textParser #-}
@@ -179,9 +183,16 @@ textParser c = do
   where
     p x = x /= c && x /= '\r' && x /= '\n' && x /= '"'
 
-{-# INLINE stringParser #-}
-stringParser :: Parser Text
-stringParser = between quote quote escape
+{-# INLINE skipSpace #-}
+skipSpace :: Parser ()
+skipSpace = skipMany $ char ' '
+
+{-# INLINE quotedStringParser #-}
+quotedStringParser :: Parser Text
+quotedStringParser = wrappedIn skipSpace parser
+  where
+    parser = wrappedIn quote escapedQuotedText
+    wrappedIn p = between p p
 
 {-# INLINE rowS #-}
 rowS :: Char -> Parser [Text]
