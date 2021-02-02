@@ -4,7 +4,7 @@ cabal-version: 1.12
 --
 -- see: https://github.com/sol/hpack
 --
--- hash: 982c5610d2ba0ae2b5ac4f30c0965a8c5a99990a04c60625ec0d344126848be5
+-- hash: 23a9dfbc3cb2f77ce2de4d7a43156d3d277fd0ec7c5fd1633b5c8d9b5383a887
 
 name:           csv-parser
 version:        0.1.0.0
@@ -29,6 +29,7 @@ library
       CSV
       CSV.Encoder
       CSV.Parser
+      CSV.Types
       Prelude
   other-modules:
       Paths_csv_parser

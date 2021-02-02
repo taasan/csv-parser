@@ -6,7 +6,7 @@
 module CSV.Parser
   ( Parser
   , EncodeCsv(..)
-  , CsvOptions(..)
+  , EncoderOptions(..)
   , RecordSeparator(..)
   , FieldSeparator(..)
   , Field(..)
@@ -22,7 +22,6 @@ module CSV.Parser
   , emptyQuotedStringParser
   , quotedStringParser
   , escapedQuotedText
-  , mkRecord
   , rfc4180
   ) where
 
@@ -36,35 +35,21 @@ import Control.Applicative
   , (<$>)
   )
 import Control.Monad
-  ( fmap
-  , liftM2
+  ( liftM2
   )
 import Data.Char
   ( Char
   )
-import Data.String
-  ( IsString (fromString)
-  )
 import Data.Text
   ( Text
-  )
-import qualified Data.Text as T
-import Data.Vector.Sized
-  ( Vector
   )
 import qualified Data.Vector.Sized as V
 import Prelude
   ( Either (..)
-  , Eq
-  , Int
   , KnownNat
   , Maybe (..)
-  , Ord
-  , Show
-  , ToText
   , first
   , mconcat
-  , otherwise
   , pure
   , some
   , toText
@@ -74,16 +59,9 @@ import Prelude
   , (.)
   , (/=)
   , (<<$>>)
-  , (<>)
   , (<|>)
-  , (==)
-  )
-import qualified Prelude
-import Relude.Extra.Newtype
-  ( un
   )
 
--- import Relude.Functor.Reexport (first)
 import qualified Data.Attoparsec.Combinator as P
 import Data.Attoparsec.Text
   ( Parser
@@ -98,73 +76,8 @@ import Data.Attoparsec.Text
   , (<?>)
   )
 
--- TYPES
-data FieldSeparator
-  = Comma
-  | Tabulator
-
-data RecordSeparator
-  = CRLF
-  | LF
-
-instance ToText FieldSeparator where
-  toText Comma = ","
-  toText Tabulator = "\t"
-
-instance ToText RecordSeparator where
-  toText CRLF = "\r\n"
-  toText LF = "\n"
-
-data CsvOptions =
-  CsvOptions
-    { fieldSeparator :: FieldSeparator
-    , recordSeparator :: RecordSeparator
-    }
-
-rfc4180 :: CsvOptions
-rfc4180 = CsvOptions {fieldSeparator = Comma, recordSeparator = CRLF}
-
-newtype Field =
-  Field Text
-  deriving (Eq, Ord, Show)
-
-newtype Record n =
-  Record (Vector n Field)
-  deriving (Eq, Ord, Show)
-
-mkRecord :: (KnownNat n) => Int -> [Field] -> Maybe (Record n)
-mkRecord len fs
-  | len == Prelude.length fs = Record <$> V.fromList fs
-  | otherwise = Nothing
-
-class EncodeCsv a where
-  encodeCsv :: CsvOptions -> a -> Text
-
--- INSTANCES
-instance IsString Field where
-  fromString = Field . Prelude.fromString
-
-instance EncodeCsv Text where
-  encodeCsv options = encodeField options . Field
-
-instance EncodeCsv Field where
-  encodeCsv = encodeField
-
-instance EncodeCsv [Field] where
-  encodeCsv options =
-    (<> rsep) . (T.intercalate fsep . fmap (encodeField options))
-    where
-      fsep = toText . fieldSeparator $ options
-      rsep = toText . recordSeparator $ options
-
-instance EncodeCsv [[Field]] where
-  encodeCsv options = mconcat . fmap (encodeCsv options)
-
-instance EncodeCsv (Record n) where
-  encodeCsv options = encodeCsv options . V.toList . un
-
-instance EncodeCsv [Record n] where
-  encodeCsv options = mconcat . fmap (encodeCsv options)
+import CSV.Encoder
+import CSV.Types
 
 -- API
 parseField :: Char -> Text -> Either Text Field
@@ -231,8 +144,3 @@ rowS c = do
   res <- liftM2 P.sepBy1 fieldS char c
   endOfLine <|> endOfInput
   pure res
-
-{-# INLINE encodeField #-}
-encodeField :: CsvOptions -> Field -> Text
-encodeField _ "" = ""
-encodeField _ (Field s) = "\"" <> T.replace "\"" "\"\"" s <> "\""

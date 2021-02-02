@@ -1,7 +1,7 @@
 -- {-# LANGUAGE NoImplicitPrelude #-}
 module CSV
   ( EncodeCsv(..)
-  , CsvOptions(..)
+  , EncoderOptions(..)
   , FieldSeparator(..)
   , Parser
   , Field(..)
